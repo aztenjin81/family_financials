@@ -134,3 +134,24 @@ export async function addTransaction(input) {
     };
   });
 }
+
+export async function deleteTransaction(transactionId) {
+  return withClient(getAppConnectionString(), async (client) => {
+    const result = await client.query(
+      `
+        delete from transactions
+        where id = $1
+        returning id
+      `,
+      [transactionId],
+    );
+
+    if (!result.rowCount) {
+      return null;
+    }
+
+    return {
+      id: Number(result.rows[0].id),
+    };
+  });
+}

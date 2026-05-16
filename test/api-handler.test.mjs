@@ -193,3 +193,65 @@ test('handleApiRequest inserts a transaction and can clean it up', async () => {
     }
   }
 });
+
+test('handleApiRequest returns 404 for missing transaction ids', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({ method: 'DELETE', url: '/api/transactions/999999' }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(data.error, 'Transaction not found');
+});
+
+test('handleApiRequest deletes an inserted transaction and can restore cleanup', async () => {
+  const merchant = `Delete Test ${Date.now()}`;
+  let transactionId = null;
+
+  try {
+    const insertResponse = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'POST',
+        url: '/api/transactions',
+        body: {
+          merchant,
+          category: 'Groceries',
+          amount: 7.89,
+          memberSlug: 'john',
+          postedLabel: 'Today',
+          timeLabel: '11:07 PM',
+          emoji: '🧪',
+          isIncome: false,
+        },
+      }),
+      insertResponse,
+    );
+    const insertData = JSON.parse(insertResponse.body);
+    transactionId = insertData.transaction.id;
+
+    const deleteResponse = createResponse();
+    await handleApiRequest(
+      createRequest({ method: 'DELETE', url: `/api/transactions/${transactionId}` }),
+      deleteResponse,
+    );
+    const deleteData = JSON.parse(deleteResponse.body);
+
+    assert.equal(deleteResponse.statusCode, 200);
+    assert.equal(deleteData.transaction.id, transactionId);
+
+    const dashboard = await getDashboardData();
+    const deletedGroup = dashboard.transactions.find((group) => (
+      group.items.some((item) => item.merch === merchant)
+    ));
+    assert.equal(deletedGroup, undefined);
+  } finally {
+    if (transactionId) {
+      await withClient(getAppConnectionString(), async (client) => {
+        await client.query('delete from transactions where id = $1', [transactionId]);
+      });
+    }
+  }
+});

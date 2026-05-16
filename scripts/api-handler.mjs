@@ -1,6 +1,6 @@
 import { getDashboardData } from './dashboard-query.mjs';
 import { updateChoreDone } from './chore-commands.mjs';
-import { addTransaction } from './transaction-commands.mjs';
+import { addTransaction, deleteTransaction } from './transaction-commands.mjs';
 
 function sendJson(res, statusCode, body) {
   res.writeHead(statusCode, {
@@ -82,6 +82,19 @@ export async function handleApiRequest(req, res) {
       }
 
       sendJson(res, 201, { transaction });
+      return true;
+    }
+
+    const transactionMatch = url.pathname.match(/^\/api\/transactions\/(\d+)$/);
+    if (transactionMatch && req.method === 'DELETE') {
+      const transaction = await deleteTransaction(Number(transactionMatch[1]));
+
+      if (!transaction) {
+        sendJson(res, 404, { error: 'Transaction not found' });
+        return true;
+      }
+
+      sendJson(res, 200, { transaction });
       return true;
     }
 
