@@ -24,7 +24,13 @@ async function readJsonBody(req) {
     return {};
   }
 
-  return JSON.parse(body);
+  try {
+    return JSON.parse(body);
+  } catch {
+    const error = new Error('Invalid JSON');
+    error.statusCode = 400;
+    throw error;
+  }
 }
 
 export async function handleApiRequest(req, res) {
@@ -81,7 +87,7 @@ export async function handleApiRequest(req, res) {
 
     sendJson(res, 404, { error: 'Not found' });
   } catch (error) {
-    sendJson(res, 500, { error: error.message });
+    sendJson(res, error.statusCode || 500, { error: error.message });
   }
 
   return true;

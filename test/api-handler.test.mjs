@@ -22,10 +22,12 @@ function createResponse() {
   return response;
 }
 
-function createRequest({ method = 'GET', url = '/', body = null } = {}) {
-  const request = body === null
-    ? Readable.from([])
-    : Readable.from([JSON.stringify(body)]);
+function createRequest({ method = 'GET', url = '/', body = null, rawBody = null } = {}) {
+  const request = rawBody !== null
+    ? Readable.from([rawBody])
+    : body === null
+      ? Readable.from([])
+      : Readable.from([JSON.stringify(body)]);
 
   request.method = method;
   request.url = url;
@@ -63,6 +65,30 @@ test('handleApiRequest validates chore update payloads', async () => {
   assert.equal(handled, true);
   assert.equal(response.statusCode, 400);
   assert.equal(data.error, '`done` must be a boolean');
+});
+
+test('handleApiRequest rejects malformed chore JSON', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({ method: 'PATCH', url: '/api/chores/1', rawBody: '{' }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Invalid JSON');
+});
+
+test('handleApiRequest returns 404 for missing chore ids', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({ method: 'PATCH', url: '/api/chores/999999', body: { done: true } }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(data.error, 'Chore not found');
 });
 
 test('handleApiRequest updates chore completion and can restore it', async () => {
@@ -105,6 +131,18 @@ test('handleApiRequest validates transaction insert payloads', async () => {
 
   assert.equal(response.statusCode, 400);
   assert.equal(data.error, 'Merchant is required');
+});
+
+test('handleApiRequest rejects malformed transaction JSON', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({ method: 'POST', url: '/api/transactions', rawBody: '{' }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Invalid JSON');
 });
 
 test('handleApiRequest inserts a transaction and can clean it up', async () => {
