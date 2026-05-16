@@ -3,6 +3,7 @@
 
 export const DATA = {
   family: 'The Czechowski Family',
+  asOfDate: '2026-05-11',
   asOf: 'Monday, May 11, 2026',
   members: [
     { slug: 'john', name: 'John', role: 'parent' },

@@ -150,6 +150,7 @@ export async function getDashboardData() {
       family: household.name,
       householdMembers,
       merchantSuggestions: [...merchantSuggestions].sort((a, b) => a.localeCompare(b)),
+      asOfDate: new Date(household.as_of).toISOString().slice(0, 10),
       asOf: new Date(household.as_of).toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'long',

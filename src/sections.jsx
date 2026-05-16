@@ -4,6 +4,7 @@ import { Fragment } from 'react';
 import { useAppState } from './app/AppState.jsx';
 import { Avatar, Delta, Icon, MemberDot, MoneyV, Ring, Sparkline } from './components.jsx';
 import { countDashboardAccounts, formatAccountCount } from './lib/accounts.js';
+import { formatBillsWindowLabel } from './lib/date-range.js';
 
 export function HeroNetWorth({ hidden, range, setRange }) {
   const { dashboardData: DATA } = useAppState();
@@ -362,12 +363,13 @@ export function TransactionsCard({ hidden }) {
 export function BillsCard({ hidden }) {
   const { dashboardData: DATA } = useAppState();
   const total = DATA.bills.reduce((s,b)=>s+b.amt,0);
+  const billsWindowLabel = formatBillsWindowLabel(DATA.asOfDate ?? DATA.asOf);
   return (
     <div className="card" style={{ alignSelf: 'start' }}>
       <div className="card-header">
         <div>
           <div className="card-label">Upcoming bills</div>
-          <div className="card-title" style={{ marginTop: 4 }}>Next <em>14 days</em></div>
+          <div className="card-title" style={{ marginTop: 4 }}>{billsWindowLabel}</div>
         </div>
         <span className="muted tiny"><MoneyV value={total} hidden={hidden} /> total</span>
       </div>

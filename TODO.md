@@ -18,7 +18,6 @@ Track agreed product and engineering ideas here. Keep entries short, actionable,
 - Add budget editing from the "Adjust budget" action and spending category rows.
 - Add goal creation/editing for the Goals plus button.
 - Add upcoming bill creation/editing and bill paid/snooze behavior.
-- Make the bills card's "Next 14 days" window date-driven instead of static fixture labels.
 - Add investment holding refresh/edit behavior and real daily portfolio delta calculations.
 - Add debt creation/editing and payoff projection details.
 - Implement kids allowance history.

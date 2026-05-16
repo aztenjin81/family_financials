@@ -6,6 +6,7 @@ test('dashboard query returns the Czechowski household data shape', async () => 
   const data = await getDashboardData();
 
   assert.equal(data.family, 'The Czechowski Family');
+  assert.equal(data.asOfDate, '2026-05-11');
   assert.equal(data.asOf, 'Monday, May 11, 2026');
   assert.ok(data.accounts.length > 0);
   assert.ok(data.transactions.length > 0);
