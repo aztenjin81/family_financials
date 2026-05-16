@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { DATA } from '../data.js';
+import { requestJson } from '../lib/api.js';
 
 const AppStateContext = createContext(null);
 
@@ -27,14 +28,7 @@ export function AppStateProvider({ children }) {
   useEffect(() => {
     let active = true;
 
-    fetch('/api/dashboard')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Dashboard API returned ${response.status}`);
-        }
-
-        return response.json();
-      })
+    requestJson('/api/dashboard')
       .then((data) => {
         if (active) {
           setDashboardData(data);
@@ -64,18 +58,11 @@ export function AppStateProvider({ children }) {
       return;
     }
 
-    fetch(`/api/chores/${choreId}`, {
+    requestJson(`/api/chores/${choreId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ done }),
     })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Chore API returned ${response.status}`);
-        }
-
-        return response.json();
-      })
       .then(({ chore }) => {
         setDashboardData(current => updateChoreInDashboard(current, chore.id, chore.done));
         setChores(current => ({ ...current, [key]: chore.done }));
@@ -87,23 +74,13 @@ export function AppStateProvider({ children }) {
   }
 
   async function addTransaction(transaction) {
-    const response = await fetch('/api/transactions', {
+    await requestJson('/api/transactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(transaction),
     });
 
-    if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.error || `Transaction API returned ${response.status}`);
-    }
-
-    const refreshed = await fetch('/api/dashboard');
-    if (!refreshed.ok) {
-      throw new Error(`Dashboard API returned ${refreshed.status}`);
-    }
-
-    const data = await refreshed.json();
+    const data = await requestJson('/api/dashboard');
     setDashboardData(data);
     setDashboardSource('database');
     return data;
