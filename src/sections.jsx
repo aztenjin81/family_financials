@@ -318,7 +318,25 @@ export function GoalsCard({ hidden }) {
 }
 
 export function TransactionsCard({ hidden }) {
-  const { dashboardData: DATA } = useAppState();
+  const { dashboardData: DATA, dashboardSource, deleteTransaction } = useAppState();
+
+  async function handleDeleteTransaction(transaction) {
+    if (dashboardSource !== 'database') {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${transaction.merch}?`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteTransaction(transaction.id);
+    } catch (error) {
+      window.alert(error.message);
+    }
+  }
+
   return (
     <div className="card">
       <div className="card-header">
@@ -338,7 +356,7 @@ export function TransactionsCard({ hidden }) {
               </span>
             </div>
             {group.items.map((t, i) => (
-              <div className="txn" key={i}>
+              <div className="txn" key={t.id ?? i}>
                 <div className="txn-emoji">{t.emoji}</div>
                 <div>
                   <div className="txn-merch">{t.merch}</div>
@@ -350,8 +368,21 @@ export function TransactionsCard({ hidden }) {
                     <MemberDot who={t.who} />
                   </div>
                 </div>
-                <div className={`txn-amt ${t.income ? 'income' : ''}`}>
-                  <MoneyV value={t.amt} hidden={hidden} forceSign={!t.income} cents />
+                <div className="txn-actions">
+                  <div className={`txn-amt ${t.income ? 'income' : ''}`}>
+                    <MoneyV value={t.amt} hidden={hidden} forceSign={!t.income} cents />
+                  </div>
+                  {dashboardSource === 'database' && t.id && (
+                    <button
+                      className="icon-btn txn-delete"
+                      type="button"
+                      title={`Delete ${t.merch}`}
+                      aria-label={`Delete ${t.merch}`}
+                      onClick={() => handleDeleteTransaction(t)}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

@@ -41,5 +41,5 @@ test('todo file tracks agreed future work', () => {
   const todo = fs.readFileSync('TODO.md', 'utf8');
 
   assert.match(todo, /Auto-fill transaction category/);
-  assert.match(todo, /transaction edit\/delete/);
+  assert.match(todo, /transaction edit actions/);
 });

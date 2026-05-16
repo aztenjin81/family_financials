@@ -49,7 +49,7 @@ export async function getDashboardData() {
       [householdId],
     );
     const transactionsResult = await client.query(
-      'select member_id, posted_label, merchant, category, amount, time_label, emoji, is_income from transactions where household_id = $1 order by sort_order, id',
+      'select id, member_id, posted_label, merchant, category, amount, time_label, emoji, is_income from transactions where household_id = $1 order by sort_order, id',
       [householdId],
     );
     const billsResult = await client.query(
@@ -111,6 +111,7 @@ export async function getDashboardData() {
       merchantSuggestions.add(transaction.merchant);
 
       transactionsByDay.get(transaction.posted_label).push({
+        id: Number(transaction.id),
         emoji: transaction.emoji,
         merch: transaction.merchant,
         cat: transaction.category,

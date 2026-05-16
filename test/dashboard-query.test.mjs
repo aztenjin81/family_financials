@@ -36,6 +36,14 @@ test('dashboard query exposes real household members and merchant suggestions', 
   assert.ok(data.merchantSuggestions.includes('Whole Foods Market'));
 });
 
+test('dashboard query exposes transaction ids for delete actions', async () => {
+  const data = await getDashboardData();
+  const transaction = data.transactions.flatMap((group) => group.items)[0];
+
+  assert.equal(typeof transaction.id, 'number');
+  assert.ok(transaction.id > 0);
+});
+
 test('dashboard query exposes stable chore ids for write actions', async () => {
   const data = await getDashboardData();
   const chores = data.kids.flatMap((kid) => kid.chores);

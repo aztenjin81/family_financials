@@ -90,22 +90,22 @@ export const DATA = {
 
   transactions: [
     { day: 'Today · Mon May 11', items: [
-      { emoji: '🛒', merch: 'Whole Foods Market', cat: 'Groceries', who: 'john', amt: -142.18, time: '11:42 AM' },
-      { emoji: '☕', merch: 'Blue Bottle Coffee', cat: 'Dining out', who: 'stephanie', amt: -6.75, time: '8:14 AM' },
+      { id: 1, emoji: '🛒', merch: 'Whole Foods Market', cat: 'Groceries', who: 'john', amt: -142.18, time: '11:42 AM' },
+      { id: 2, emoji: '☕', merch: 'Blue Bottle Coffee', cat: 'Dining out', who: 'stephanie', amt: -6.75, time: '8:14 AM' },
     ]},
     { day: 'Sun May 10', items: [
-      { emoji: '⛽', merch: 'Shell · Pump 4', cat: 'Gas', who: 'stephanie', amt: -54.20, time: '4:02 PM' },
-      { emoji: '🎬', merch: 'AMC Theatres', cat: 'Fun', who: 'john', amt: -48.00, time: '1:18 PM' },
-      { emoji: '🍕', merch: "Joe's Pizza", cat: 'Dining out', who: 'john', amt: -38.40, time: '12:40 PM' },
+      { id: 3, emoji: '⛽', merch: 'Shell · Pump 4', cat: 'Gas', who: 'stephanie', amt: -54.20, time: '4:02 PM' },
+      { id: 4, emoji: '🎬', merch: 'AMC Theatres', cat: 'Fun', who: 'john', amt: -48.00, time: '1:18 PM' },
+      { id: 5, emoji: '🍕', merch: "Joe's Pizza", cat: 'Dining out', who: 'john', amt: -38.40, time: '12:40 PM' },
     ]},
     { day: 'Sat May 9 · payday', items: [
-      { emoji: '💼', merch: 'Acme Corp — Payroll', cat: 'Income', who: 'john', amt: 3712.40, time: '6:00 AM', income: true },
-      { emoji: '🏠', merch: 'Mortgage Auto-Pay', cat: 'Housing', who: 'john', amt: -2480.00, time: '6:00 AM' },
-      { emoji: '🎒', merch: 'Target', cat: 'Kids', who: 'stephanie', amt: -68.94, time: '3:22 PM' },
+      { id: 6, emoji: '💼', merch: 'Acme Corp — Payroll', cat: 'Income', who: 'john', amt: 3712.40, time: '6:00 AM', income: true },
+      { id: 7, emoji: '🏠', merch: 'Mortgage Auto-Pay', cat: 'Housing', who: 'john', amt: -2480.00, time: '6:00 AM' },
+      { id: 8, emoji: '🎒', merch: 'Target', cat: 'Kids', who: 'stephanie', amt: -68.94, time: '3:22 PM' },
     ]},
     { day: 'Fri May 8', items: [
-      { emoji: '💡', merch: 'Con Edison', cat: 'Utilities', who: 'john', amt: -148.20, time: '9:00 AM' },
-      { emoji: '📱', merch: 'Verizon Wireless', cat: 'Bills', who: 'stephanie', amt: -184.99, time: '9:00 AM' },
+      { id: 9, emoji: '💡', merch: 'Con Edison', cat: 'Utilities', who: 'john', amt: -148.20, time: '9:00 AM' },
+      { id: 10, emoji: '📱', merch: 'Verizon Wireless', cat: 'Bills', who: 'stephanie', amt: -184.99, time: '9:00 AM' },
     ]},
   ],
 

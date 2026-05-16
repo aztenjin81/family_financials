@@ -635,7 +635,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .txn {
   display: grid;
-  grid-template-columns: 32px 1fr auto auto;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   padding: 10px 0;
@@ -653,8 +653,30 @@ button { font-family: inherit; cursor: pointer; }
 }
 .txn-merch { font-weight: 500; font-size: 13px; }
 .txn-meta { font-size: 11px; color: var(--mute); display: flex; gap: 8px; align-items: center; }
+.txn-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
 .txn-amt { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
 .txn-amt.income { color: var(--green); }
+.txn-delete {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mute);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+}
+.txn-delete:hover {
+  background: var(--red-2);
+  border-color: rgba(201, 74, 44, 0.16);
+  color: var(--red);
+}
 .member-chip {
   display: inline-flex;
   align-items: center;

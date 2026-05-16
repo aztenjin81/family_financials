@@ -4,7 +4,7 @@ Track agreed product and engineering ideas here. Keep entries short, actionable,
 
 ## Product
 
-- Add transaction edit/delete actions.
+- Add transaction edit actions.
 - Auto-fill transaction category, member, and icon from prior merchant history.
 - Improve merchant suggestions beyond simple transaction scanning if repeated-merchant behavior needs ranking or aliases.
 - Make "View all" in Recent activity open a full transactions view with filtering by member, category, merchant, date, and amount.

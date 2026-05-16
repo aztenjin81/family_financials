@@ -10,6 +10,18 @@ test('transaction modal wires merchant input to dashboard merchant suggestions',
   assert.match(source, /dashboardData\.merchantSuggestions/);
 });
 
+test('transaction rows expose a delete action wired to the api', () => {
+  const shell = fs.readFileSync('src/sections.jsx', 'utf8');
+  const state = fs.readFileSync('src/app/AppState.jsx', 'utf8');
+
+  assert.match(shell, /txn-delete/);
+  assert.match(shell, /window\.confirm/);
+  assert.match(shell, /Delete \${transaction\.merch}\?/);
+  assert.match(state, /async function deleteTransaction/);
+  assert.match(state, /\/api\/transactions\/\$\{transactionId\}/);
+  assert.match(state, /requestJson\('\/api\/dashboard'\)/);
+});
+
 test('transaction modal renders household member options from dashboard data', () => {
   const source = fs.readFileSync('src/layout/AppShell.jsx', 'utf8');
 

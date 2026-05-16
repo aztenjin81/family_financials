@@ -86,6 +86,17 @@ export function AppStateProvider({ children }) {
     return data;
   }
 
+  async function deleteTransaction(transactionId) {
+    await requestJson(`/api/transactions/${transactionId}`, {
+      method: 'DELETE',
+    });
+
+    const data = await requestJson('/api/dashboard');
+    setDashboardData(data);
+    setDashboardSource('database');
+    return data;
+  }
+
   const value = useMemo(() => ({
     dashboardData,
     dashboardSource,
@@ -98,6 +109,7 @@ export function AppStateProvider({ children }) {
     chores,
     toggleChore,
     addTransaction,
+    deleteTransaction,
     showInsight,
     dismissInsight: () => setShowInsight(false),
   }), [activePage, chores, dashboardData, dashboardSource, hidden, netWorthRange, showInsight]);
