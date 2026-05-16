@@ -20,3 +20,11 @@ test('dashboard query exposes John-facing account data', async () => {
   assert.ok(accountNames.includes('Fidelity 401(k) — John'));
   assert.equal(accountNames.some((name) => name.includes('Alex')), false);
 });
+
+test('dashboard query exposes stable chore ids for write actions', async () => {
+  const data = await getDashboardData();
+  const chores = data.kids.flatMap((kid) => kid.chores);
+
+  assert.ok(chores.length > 0);
+  assert.equal(typeof chores[0].id, 'number');
+});

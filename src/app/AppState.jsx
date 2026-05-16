@@ -3,6 +3,18 @@ import { DATA } from '../data.js';
 
 const AppStateContext = createContext(null);
 
+function updateChoreInDashboard(data, choreId, done) {
+  return {
+    ...data,
+    kids: data.kids.map((kid) => ({
+      ...kid,
+      chores: kid.chores.map((chore) => (
+        chore.id === choreId ? { ...chore, done } : chore
+      )),
+    })),
+  };
+}
+
 export function AppStateProvider({ children }) {
   const [hidden, setHidden] = useState(false);
   const [activePage, setActivePage] = useState('overview');
@@ -41,6 +53,39 @@ export function AppStateProvider({ children }) {
     };
   }, []);
 
+  function toggleChore(key, done, choreId = null) {
+    setChores(current => ({ ...current, [key]: done }));
+
+    if (choreId) {
+      setDashboardData(current => updateChoreInDashboard(current, choreId, done));
+    }
+
+    if (dashboardSource !== 'database' || !choreId) {
+      return;
+    }
+
+    fetch(`/api/chores/${choreId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ done }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Chore API returned ${response.status}`);
+        }
+
+        return response.json();
+      })
+      .then(({ chore }) => {
+        setDashboardData(current => updateChoreInDashboard(current, chore.id, chore.done));
+        setChores(current => ({ ...current, [key]: chore.done }));
+      })
+      .catch(() => {
+        setDashboardData(current => updateChoreInDashboard(current, choreId, !done));
+        setChores(current => ({ ...current, [key]: !done }));
+      });
+  }
+
   const value = useMemo(() => ({
     dashboardData,
     dashboardSource,
@@ -51,7 +96,7 @@ export function AppStateProvider({ children }) {
     netWorthRange,
     setNetWorthRange,
     chores,
-    toggleChore: (key, done) => setChores(current => ({ ...current, [key]: done })),
+    toggleChore,
     showInsight,
     dismissInsight: () => setShowInsight(false),
   }), [activePage, chores, dashboardData, dashboardSource, hidden, netWorthRange, showInsight]);

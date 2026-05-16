@@ -491,11 +491,11 @@ export function KidsCard({ hidden, chores, toggleChore }) {
             <div className="card-label" style={{ marginBottom: 8 }}>This week's chores</div>
             <div className="chore-list">
               {k.chores.map((c, ci) => {
-                const key = `${ki}-${ci}`;
+                const key = c.id ? `chore-${c.id}` : `${ki}-${ci}`;
                 const done = chores[key] ?? c.done;
                 return (
                   <div className={`chore ${done ? 'done' : ''}`} key={ci}>
-                    <span className="chore-check" onClick={() => toggleChore(key, !done)}>
+                    <span className="chore-check" onClick={() => toggleChore(key, !done, c.id)}>
                       {done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                     </span>
                     <span className="chore-label">{c.label}</span>

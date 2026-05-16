@@ -65,7 +65,7 @@ export async function getDashboardData() {
       [householdId],
     );
     const jarsResult = await client.query('select member_id, spend, save, give from kid_jars order by id');
-    const choresResult = await client.query('select member_id, label, reward, is_done from chores order by id');
+    const choresResult = await client.query('select id, member_id, label, reward, is_done from chores order by id');
 
     const members = membersResult.rows.map((member) => ({
       ...member,
@@ -130,6 +130,7 @@ export async function getDashboardData() {
             give: money(jars?.give),
           },
           chores: memberChores.map((chore) => ({
+            id: Number(chore.id),
             label: chore.label,
             reward: money(chore.reward),
             done: chore.is_done,
