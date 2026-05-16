@@ -87,10 +87,6 @@ export function AppStateProvider({ children }) {
   }
 
   async function addTransaction(transaction) {
-    if (dashboardSource !== 'database') {
-      throw new Error('Transactions require the database API');
-    }
-
     const response = await fetch('/api/transactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -109,6 +105,7 @@ export function AppStateProvider({ children }) {
 
     const data = await refreshed.json();
     setDashboardData(data);
+    setDashboardSource('database');
     return data;
   }
 
