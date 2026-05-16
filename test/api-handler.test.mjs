@@ -4,6 +4,7 @@ import { Readable } from 'node:stream';
 import test from 'node:test';
 import { handleApiRequest } from '../scripts/api-handler.mjs';
 import { getDashboardData } from '../scripts/dashboard-query.mjs';
+import { getAppConnectionString, withClient } from '../scripts/db-utils.mjs';
 
 function createResponse() {
   const response = new EventEmitter();
@@ -91,5 +92,59 @@ test('handleApiRequest updates chore completion and can restore it', async () =>
       createRequest({ method: 'PATCH', url: `/api/chores/${chore.id}`, body: { done: chore.done } }),
       restoreResponse,
     );
+  }
+});
+
+test('handleApiRequest validates transaction insert payloads', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({ method: 'POST', url: '/api/transactions', body: { merchant: '', amount: 12 } }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Merchant is required');
+});
+
+test('handleApiRequest inserts a transaction and can clean it up', async () => {
+  const merchant = `Test Transaction ${Date.now()}`;
+  let transactionId = null;
+
+  try {
+    const response = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'POST',
+        url: '/api/transactions',
+        body: {
+          merchant,
+          category: 'Groceries',
+          amount: 12.34,
+          memberSlug: 'alex',
+          postedLabel: 'Today',
+          timeLabel: '10:41 PM',
+          emoji: '🧪',
+          isIncome: false,
+        },
+      }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+    transactionId = data.transaction.id;
+
+    assert.equal(response.statusCode, 201);
+    assert.equal(data.transaction.merchant, merchant);
+    assert.equal(data.transaction.amount, -12.34);
+
+    const dashboard = await getDashboardData();
+    const merchants = dashboard.transactions.flatMap((group) => group.items.map((item) => item.merch));
+    assert.ok(merchants.includes(merchant));
+  } finally {
+    if (transactionId) {
+      await withClient(getAppConnectionString(), async (client) => {
+        await client.query('delete from transactions where id = $1', [transactionId]);
+      });
+    }
   }
 });

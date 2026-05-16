@@ -86,6 +86,32 @@ export function AppStateProvider({ children }) {
       });
   }
 
+  async function addTransaction(transaction) {
+    if (dashboardSource !== 'database') {
+      throw new Error('Transactions require the database API');
+    }
+
+    const response = await fetch('/api/transactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(transaction),
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Transaction API returned ${response.status}`);
+    }
+
+    const refreshed = await fetch('/api/dashboard');
+    if (!refreshed.ok) {
+      throw new Error(`Dashboard API returned ${refreshed.status}`);
+    }
+
+    const data = await refreshed.json();
+    setDashboardData(data);
+    return data;
+  }
+
   const value = useMemo(() => ({
     dashboardData,
     dashboardSource,
@@ -97,6 +123,7 @@ export function AppStateProvider({ children }) {
     setNetWorthRange,
     chores,
     toggleChore,
+    addTransaction,
     showInsight,
     dismissInsight: () => setShowInsight(false),
   }), [activePage, chores, dashboardData, dashboardSource, hidden, netWorthRange, showInsight]);

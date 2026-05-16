@@ -1,5 +1,6 @@
 import { getDashboardData } from './dashboard-query.mjs';
 import { updateChoreDone } from './chore-commands.mjs';
+import { addTransaction } from './transaction-commands.mjs';
 
 function sendJson(res, statusCode, body) {
   res.writeHead(statusCode, {
@@ -61,6 +62,20 @@ export async function handleApiRequest(req, res) {
       }
 
       sendJson(res, 200, { chore });
+      return true;
+    }
+
+    if (url.pathname === '/api/transactions' && req.method === 'POST') {
+      const payload = await readJsonBody(req);
+      let transaction;
+      try {
+        transaction = await addTransaction(payload);
+      } catch (error) {
+        sendJson(res, 400, { error: error.message });
+        return true;
+      }
+
+      sendJson(res, 201, { transaction });
       return true;
     }
 
