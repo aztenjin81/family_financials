@@ -21,6 +21,20 @@ test('dashboard query exposes John-facing account data', async () => {
   assert.equal(accountNames.some((name) => name.includes('Alex')), false);
 });
 
+test('dashboard query exposes real household members and merchant suggestions', async () => {
+  const data = await getDashboardData();
+
+  assert.deepEqual(data.householdMembers.map((member) => member.slug), [
+    'john',
+    'stephanie',
+    'kristen',
+    'jason',
+    'lauren',
+    'ian',
+  ]);
+  assert.ok(data.merchantSuggestions.includes('Whole Foods Market'));
+});
+
 test('dashboard query exposes stable chore ids for write actions', async () => {
   const data = await getDashboardData();
   const chores = data.kids.flatMap((kid) => kid.chores);

@@ -1,12 +1,5 @@
-import { DATA } from '../src/data.js';
 import { getAppConnectionString, withClient } from './db-utils.mjs';
-
-const memberNames = {
-  alex: 'John',
-  sam: 'Sam',
-  mia: 'Mia',
-  theo: 'Theo',
-};
+import { DATA } from '../src/data.js';
 
 await withClient(getAppConnectionString(), async (client) => {
   await client.query('begin');
@@ -37,15 +30,13 @@ await withClient(getAppConnectionString(), async (client) => {
     const householdId = household.rows[0].id;
 
     const members = new Map();
-    const memberSlugs = ['alex', 'sam', 'mia', 'theo'];
 
-    for (const slug of memberSlugs) {
-      const kid = DATA.kids.find((item) => item.who === slug);
+    for (const member of DATA.members) {
       const result = await client.query(
         'insert into household_members (household_id, slug, display_name, age, role) values ($1, $2, $3, $4, $5) returning id',
-        [householdId, slug, kid?.name ?? memberNames[slug], kid?.age ?? null, kid ? 'child' : 'parent'],
+        [householdId, member.slug, member.name, member.age ?? null, member.role],
       );
-      members.set(slug, result.rows[0].id);
+      members.set(member.slug, result.rows[0].id);
     }
 
     let accountOrder = 0;

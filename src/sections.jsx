@@ -461,7 +461,7 @@ export function KidsCard({ hidden, chores, toggleChore }) {
         <div>
           <div className="card-label">Kids' allowance</div>
           <div className="card-title" style={{ marginTop: 4, fontSize: 24 }}>
-            <em>The little</em> Harpers
+            <em>The young</em> Czechowskis
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>

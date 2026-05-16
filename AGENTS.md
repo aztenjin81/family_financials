@@ -4,7 +4,7 @@
 
 Family Financials is a household finance dashboard for The Czechowski Family. The app shows net worth, accounts, budgets, transactions, bills, goals, investments, debts, and kids' allowance/chores.
 
-The primary user is John. User-facing household data should use John, not Alex. The internal member slug `alex` may still exist in seed/demo data until a deliberate migration renames it.
+The household members are John and Stephanie, plus Kristen (18), Jason (10), Lauren (9), and Ian (5). Use these names and ages in user-facing household data and seed/demo data.
 
 ## Database Rules
 

@@ -71,6 +71,12 @@ export async function getDashboardData() {
       ...member,
       id: Number(member.id),
     }));
+    const householdMembers = members.map((member) => ({
+      slug: member.slug,
+      name: member.display_name,
+      age: member.age,
+      role: member.role,
+    }));
 
     const accountsByGroup = new Map();
     for (const account of accountsResult.rows) {
@@ -97,10 +103,12 @@ export async function getDashboardData() {
     const holdingsTotal = holdingsResult.rows.reduce((sum, row) => sum + money(row.value), 0);
 
     const transactionsByDay = new Map();
+    const merchantSuggestions = new Set();
     for (const transaction of transactionsResult.rows) {
       if (!transactionsByDay.has(transaction.posted_label)) {
         transactionsByDay.set(transaction.posted_label, []);
       }
+      merchantSuggestions.add(transaction.merchant);
 
       transactionsByDay.get(transaction.posted_label).push({
         emoji: transaction.emoji,
@@ -140,6 +148,8 @@ export async function getDashboardData() {
 
     return {
       family: household.name,
+      householdMembers,
+      merchantSuggestions: [...merchantSuggestions].sort((a, b) => a.localeCompare(b)),
       asOf: new Date(household.as_of).toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'long',

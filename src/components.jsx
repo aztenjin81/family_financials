@@ -2,10 +2,12 @@
 /* Shared atoms: Money, Avatar, Card, Sparkline, Ring */
 
 export const FAMILY = {
-  alex: { name: 'John', initial: 'J', color: 'var(--m-alex)' },
-  sam:  { name: 'Sam',  initial: 'S', color: 'var(--m-sam)' },
-  mia:  { name: 'Mia',  initial: 'M', color: 'var(--m-mia)' },
-  theo: { name: 'Theo', initial: 'T', color: 'var(--m-theo)' },
+  john: { name: 'John', initial: 'J', color: 'var(--m-john)' },
+  stephanie: { name: 'Stephanie', initial: 'S', color: 'var(--m-stephanie)' },
+  kristen: { name: 'Kristen', initial: 'K', color: 'var(--m-kristen)' },
+  jason: { name: 'Jason', initial: 'J', color: 'var(--m-jason)' },
+  lauren: { name: 'Lauren', initial: 'L', color: 'var(--m-lauren)' },
+  ian: { name: 'Ian', initial: 'I', color: 'var(--m-ian)' },
 };
 
 export function fmt(n, opts = {}) {

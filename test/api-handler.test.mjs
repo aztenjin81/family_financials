@@ -121,7 +121,7 @@ test('handleApiRequest inserts a transaction and can clean it up', async () => {
           merchant,
           category: 'Groceries',
           amount: 12.34,
-          memberSlug: 'alex',
+          memberSlug: 'john',
           postedLabel: 'Today',
           timeLabel: '10:41 PM',
           emoji: '🧪',

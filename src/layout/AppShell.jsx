@@ -22,12 +22,17 @@ export function AppShell({ children }) {
     merchant: '',
     category: 'Groceries',
     amount: '',
-    memberSlug: 'alex',
+    memberSlug: 'john',
     emoji: '🛒',
     isIncome: false,
   });
   const greeting = getGreetingParts();
-  const primaryMember = FAMILY.alex.name;
+  const householdMembers = dashboardData.householdMembers || Object.entries(FAMILY).map(([slug, member]) => ({
+    slug,
+    name: member.name,
+    role: slug === 'john' || slug === 'stephanie' ? 'parent' : 'child',
+  }));
+  const primaryMember = FAMILY.john.name;
 
   async function submitTransaction(event) {
     event.preventDefault();
@@ -48,7 +53,7 @@ export function AppShell({ children }) {
         merchant: '',
         category: 'Groceries',
         amount: '',
-        memberSlug: 'alex',
+        memberSlug: 'john',
         emoji: '🛒',
         isIncome: false,
       });
@@ -103,10 +108,9 @@ export function AppShell({ children }) {
           </button>
           <div className="topbar-divider" />
           <div className="member-stack" aria-label="Household members">
-            <Avatar who="alex" />
-            <Avatar who="sam" />
-            <Avatar who="mia" />
-            <Avatar who="theo" />
+            {householdMembers.map((member) => (
+              <Avatar key={member.slug} who={member.slug} />
+            ))}
           </div>
         </div>
       </header>
@@ -162,10 +166,16 @@ export function AppShell({ children }) {
                 <span>Merchant</span>
                 <input
                   required
+                  list="merchant-suggestions"
                   value={transactionForm.merchant}
                   onChange={(event) => updateTransactionField('merchant', event.target.value)}
                   placeholder="Store or payee"
                 />
+                <datalist id="merchant-suggestions">
+                  {(dashboardData.merchantSuggestions || []).map((merchant) => (
+                    <option key={merchant} value={merchant} />
+                  ))}
+                </datalist>
               </label>
               <label className="form-field">
                 <span>Amount</span>
@@ -200,10 +210,11 @@ export function AppShell({ children }) {
                   value={transactionForm.memberSlug}
                   onChange={(event) => updateTransactionField('memberSlug', event.target.value)}
                 >
-                  <option value="alex">John</option>
-                  <option value="sam">Sam</option>
-                  <option value="mia">Mia</option>
-                  <option value="theo">Theo</option>
+                  {householdMembers.map((member) => (
+                    <option key={member.slug} value={member.slug}>
+                      {member.name}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="form-field">
@@ -239,7 +250,7 @@ export function AppShell({ children }) {
       )}
 
       <footer className="site-footer">
-        <span>Hearth · built by John & Sam, the long way around</span>
+        <span>Hearth · built by John & Stephanie, the long way around</span>
         <span>Last sync 4 min ago · 11 accounts · 6 institutions</span>
       </footer>
     </div>
