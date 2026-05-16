@@ -296,6 +296,24 @@ button { font-family: inherit; cursor: pointer; }
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+.fallback-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background: var(--gold-2);
+  color: #6f520e;
+  font-size: 12px;
+  font-weight: 600;
+}
+.fallback-banner .live-dot {
+  background: var(--gold);
+  margin-right: 0;
+  flex: 0 0 auto;
+}
 .site-footer {
   margin-top: 40px;
   padding-top: 20px;

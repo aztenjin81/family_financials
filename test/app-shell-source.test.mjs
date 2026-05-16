@@ -22,3 +22,12 @@ test('transaction submission is not blocked by fixture dashboard state', () => {
 
   assert.doesNotMatch(source, /Transactions require the database API/);
 });
+
+test('app shell shows a visible indicator when fixture data is active', () => {
+  const source = fs.readFileSync('src/layout/AppShell.jsx', 'utf8');
+
+  assert.match(source, /dashboardSource/);
+  assert.match(source, /dashboardSource === 'fixture'/);
+  assert.match(source, /className="fallback-banner"/);
+  assert.match(source, /Using demo data until the local database API is available\./);
+});

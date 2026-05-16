@@ -3,16 +3,18 @@
 import { Fragment } from 'react';
 import { useAppState } from './app/AppState.jsx';
 import { Avatar, Delta, Icon, MemberDot, MoneyV, Ring, Sparkline } from './components.jsx';
+import { countDashboardAccounts, formatAccountCount } from './lib/accounts.js';
 
 export function HeroNetWorth({ hidden, range, setRange }) {
   const { dashboardData: DATA } = useAppState();
   const nw = DATA.netWorth;
+  const accountCount = countDashboardAccounts(DATA);
   return (
     <div className="card hero-networth">
       <div className="card-header">
         <div>
           <div className="card-label">Net worth</div>
-          <div className="muted tiny" style={{ marginTop: 4 }}>Combined household · 11 accounts</div>
+          <div className="muted tiny" style={{ marginTop: 4 }}>Combined household · {formatAccountCount(accountCount)}</div>
         </div>
         <div className="range-toggle">
           {['1M','3M','6M','1Y','ALL'].map(r => (

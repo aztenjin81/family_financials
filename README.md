@@ -59,6 +59,12 @@ Run the API in a separate terminal while using the Vite dev server:
 npm run api
 ```
 
+Or start both the API and Vite together:
+
+```bash
+npm run dev:all
+```
+
 The app fetches `/api/dashboard`. During development, Vite proxies that path to `http://127.0.0.1:8787`. The production static server also serves the API route:
 
 ```bash

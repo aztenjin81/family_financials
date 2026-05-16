@@ -9,6 +9,7 @@ export function AppShell({ children }) {
     activePage,
     addTransaction,
     dashboardData,
+    dashboardSource,
     dismissInsight,
     hidden,
     setActivePage,
@@ -132,6 +133,13 @@ export function AppShell({ children }) {
           </button>
         </div>
       </section>
+
+      {dashboardSource === 'fixture' && (
+        <aside className="fallback-banner" role="status">
+          <span className="live-dot" />
+          Using demo data until the local database API is available.
+        </aside>
+      )}
 
       {showInsight && (
         <aside className="insight">

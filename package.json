@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "dev:all": "node scripts/dev-all.mjs",
     "build": "vite build",
     "test": "node --test",
     "security:secrets": "gitleaks protect --staged --redact --verbose",
