@@ -3,13 +3,16 @@
 import { Fragment } from 'react';
 import { useAppState } from './app/AppState.jsx';
 import { Avatar, Delta, Icon, MemberDot, MoneyV, Ring, Sparkline } from './components.jsx';
+import { getCashflowStatus } from './lib/cashflow.js';
 import { getBudgetStatus } from './lib/budget.js';
 import { countDashboardAccounts, formatAccountCount } from './lib/accounts.js';
 import { formatBillsWindowLabel } from './lib/date-range.js';
+import { getNetWorthWindow } from './lib/net-worth.js';
 
 export function HeroNetWorth({ hidden, range, setRange }) {
   const { dashboardData: DATA } = useAppState();
   const nw = DATA.netWorth;
+  const netWorthWindow = getNetWorthWindow(nw.history, range);
   const accountCount = countDashboardAccounts(DATA);
   return (
     <div className="card hero-networth">
@@ -19,18 +22,18 @@ export function HeroNetWorth({ hidden, range, setRange }) {
           <div className="muted tiny" style={{ marginTop: 4 }}>Combined household · {formatAccountCount(accountCount)}</div>
         </div>
         <div className="range-toggle">
-          {['1M','3M','6M','1Y','ALL'].map(r => (
-            <button key={r} className={range === r ? 'active' : ''} onClick={() => setRange(r)}>{r}</button>
+          {['1M','3M','6M','1Y','ALL'].map((r) => (
+            <button key={r} className={range === r ? 'active' : ''} onClick={() => setRange(r)} type="button">{r}</button>
           ))}
         </div>
       </div>
       <div className="figure">
-        <MoneyV value={nw.total} size="big" serif hidden={hidden} cents />
-        <Delta value={nw.delta30} />
-        <span className="muted tiny">vs. 30 days ago</span>
+        <MoneyV value={netWorthWindow.total} size="big" serif hidden={hidden} cents />
+        <Delta value={netWorthWindow.delta} />
+        <span className="muted tiny">{netWorthWindow.label}</span>
       </div>
       <div className="spark-wrap">
-        <Sparkline data={nw.history} color="var(--ink)" fill="rgba(31,122,77,0.10)" height={70} />
+        <Sparkline data={netWorthWindow.history} color="var(--ink)" fill="rgba(31,122,77,0.10)" height={70} />
       </div>
     </div>
   );
@@ -71,6 +74,7 @@ export function HeroSpend({ hidden }) {
 export function HeroCashflow({ hidden }) {
   const { dashboardData: DATA } = useAppState();
   const c = DATA.cashflow30;
+  const cashflowStatus = getCashflowStatus(c);
   return (
     <div className="card dark">
       <div className="card-header">
@@ -80,7 +84,7 @@ export function HeroCashflow({ hidden }) {
             <em>Projected</em> cashflow
           </div>
         </div>
-        <span className="tag" style={{ background: 'rgba(217,163,34,0.18)', color: 'var(--gold)' }}>healthy</span>
+        <span className={`tag ${cashflowStatus.tagClass}`}>{cashflowStatus.label}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 14 }}>
         <MoneyV value={c.net} size="big" serif hidden={hidden} forceSign />
@@ -103,7 +107,7 @@ export function HeroCashflow({ hidden }) {
   );
 }
 
-export function AccountsRail({ hidden }) {
+export function AccountsRail({ hidden, onAddAccount, onEditAccount }) {
   const { dashboardData: DATA } = useAppState();
   return (
     <div className="card" style={{ alignSelf: 'start' }}>
@@ -112,7 +116,9 @@ export function AccountsRail({ hidden }) {
           <div className="card-label">Accounts</div>
           <div className="card-title" style={{ marginTop: 4 }}>Where the <em>money</em> lives</div>
         </div>
-        <button className="icon-btn" style={{ width: 28, height: 28 }} title="Add account"><Icon.Plus size={14} /></button>
+        <button className="icon-btn" style={{ width: 28, height: 28 }} title="Add account" type="button" onClick={() => onAddAccount?.()}>
+          <Icon.Plus size={14} />
+        </button>
       </div>
 
       {DATA.accounts.map(g => (
@@ -126,8 +132,16 @@ export function AccountsRail({ hidden }) {
               const Ic = Icon[a.icon] || Icon.Bank;
               const neg = a.bal < 0;
               return (
-                <div className="acct" key={a.name}>
-                  <span className="acct-icon"><Ic /></span>
+                <div className="acct" key={a.id ?? a.name}>
+                  <button
+                    className="acct-icon acct-edit"
+                    type="button"
+                    title={`Edit ${a.name}`}
+                    aria-label={`Edit ${a.name}`}
+                    onClick={() => onEditAccount?.(a)}
+                  >
+                    <Ic />
+                  </button>
                   <div>
                     <div className="acct-name">{a.name}</div>
                     <div className="acct-sub">{a.sub}</div>
@@ -151,7 +165,7 @@ export function AccountsRail({ hidden }) {
   );
 }
 
-export function SpendingCard({ hidden }) {
+export function SpendingCard({ hidden, onAdjustBudget }) {
   const { dashboardData: DATA } = useAppState();
   const total = DATA.spending.reduce((s, c) => s + c.spent, 0);
   const totalBudget = DATA.spending.reduce((s, c) => s + c.budget, 0);
@@ -171,7 +185,7 @@ export function SpendingCard({ hidden }) {
       </div>
 
       <div>
-        {DATA.spending.map(c => {
+        {DATA.spending.map((c) => {
           const pct = c.spent / c.budget;
           const over = c.spent > c.budget;
           const widthPct = Math.min(100, pct * 100);
@@ -191,6 +205,15 @@ export function SpendingCard({ hidden }) {
               <div className="spend-vals">
                 <MoneyV value={c.spent} hidden={hidden} /> <span className="of">/ <MoneyV value={c.budget} hidden={hidden} /></span>
               </div>
+              <button
+                className="spend-edit"
+                type="button"
+                title={`Adjust ${c.cat} budget`}
+                aria-label={`Adjust ${c.cat} budget`}
+                onClick={() => onAdjustBudget?.(c)}
+              >
+                Adjust
+              </button>
             </div>
           );
         })}
@@ -317,7 +340,7 @@ export function GoalsCard({ hidden }) {
   );
 }
 
-export function TransactionsCard({ hidden }) {
+export function TransactionsCard({ hidden, onEditTransaction }) {
   const { dashboardData: DATA, dashboardSource, deleteTransaction } = useAppState();
 
   async function handleDeleteTransaction(transaction) {
@@ -373,15 +396,26 @@ export function TransactionsCard({ hidden }) {
                     <MoneyV value={t.amt} hidden={hidden} forceSign={!t.income} cents />
                   </div>
                   {dashboardSource === 'database' && t.id && (
-                    <button
-                      className="icon-btn txn-delete"
+                    <>
+                      <button
+                      className="icon-btn txn-edit"
                       type="button"
-                      title={`Delete ${t.merch}`}
-                      aria-label={`Delete ${t.merch}`}
-                      onClick={() => handleDeleteTransaction(t)}
-                    >
-                      ×
-                    </button>
+                      title={`Edit ${t.merch}`}
+                      aria-label={`Edit ${t.merch}`}
+                        onClick={() => onEditTransaction?.({ ...t, postedLabel: group.day, postedDate: group.date })}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        className="icon-btn txn-delete"
+                        type="button"
+                        title={`Delete ${t.merch}`}
+                        aria-label={`Delete ${t.merch}`}
+                        onClick={() => handleDeleteTransaction(t)}
+                      >
+                        ×
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

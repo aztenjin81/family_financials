@@ -1,4 +1,5 @@
 import { getAppConnectionString, withClient } from './db-utils.mjs';
+import { formatTransactionDayLabel, parseTransactionDateLabel } from '../src/lib/transaction-date.js';
 
 function money(value) {
   return Number(value || 0);
@@ -23,17 +24,18 @@ export async function getDashboardData() {
 
     const household = householdResult.rows[0];
     const householdId = household.id;
+    const asOfDate = new Date(household.as_of).toISOString().slice(0, 10);
 
     const membersResult = await client.query(
       'select id, slug, display_name, age, role from household_members where household_id = $1 order by id',
       [householdId],
     );
     const accountsResult = await client.query(
-      'select owner_member_id, account_group, name, subtitle, icon, balance from accounts where household_id = $1 order by sort_order, id',
+      'select id, owner_member_id, account_group, name, subtitle, icon, balance, external_provider, external_item_id, external_account_id, imported_at, sync_status from accounts where household_id = $1 order by sort_order, id',
       [householdId],
     );
     const spendingResult = await client.query(
-      'select name, color, spent, budget from spending_categories where household_id = $1 order by id',
+      'select id, name, color, spent, budget from spending_categories where household_id = $1 order by id',
       [householdId],
     );
     const netWorthResult = await client.query(
@@ -49,7 +51,7 @@ export async function getDashboardData() {
       [householdId],
     );
     const transactionsResult = await client.query(
-      'select id, member_id, posted_label, merchant, category, amount, time_label, emoji, is_income from transactions where household_id = $1 order by sort_order, id',
+      'select id, member_id, posted_date, posted_label, merchant, category, amount, time_label, emoji, is_income from transactions where household_id = $1 order by sort_order, id',
       [householdId],
     );
     const billsResult = await client.query(
@@ -85,11 +87,18 @@ export async function getDashboardData() {
       }
 
       accountsByGroup.get(account.account_group).push({
+        id: Number(account.id),
+        group: account.account_group,
         name: account.name,
         sub: account.subtitle,
         icon: account.icon,
         bal: money(account.balance),
         owner: byMemberSlug(members, Number(account.owner_member_id)),
+        externalProvider: account.external_provider,
+        externalItemId: account.external_item_id,
+        externalAccountId: account.external_account_id,
+        importedAt: account.imported_at ? new Date(account.imported_at).toISOString() : null,
+        syncStatus: account.sync_status,
       });
     }
 
@@ -105,12 +114,17 @@ export async function getDashboardData() {
     const transactionsByDay = new Map();
     const merchantSuggestions = new Set();
     for (const transaction of transactionsResult.rows) {
-      if (!transactionsByDay.has(transaction.posted_label)) {
-        transactionsByDay.set(transaction.posted_label, []);
+      const postedDate = transaction.posted_date
+        ? new Date(transaction.posted_date).toISOString().slice(0, 10)
+        : parseTransactionDateLabel(transaction.posted_label, asOfDate);
+      const dayLabel = transaction.posted_label || formatTransactionDayLabel(postedDate, asOfDate);
+
+      if (!transactionsByDay.has(postedDate)) {
+        transactionsByDay.set(postedDate, { day: dayLabel, date: postedDate, items: [] });
       }
       merchantSuggestions.add(transaction.merchant);
 
-      transactionsByDay.get(transaction.posted_label).push({
+      transactionsByDay.get(postedDate).items.push({
         id: Number(transaction.id),
         emoji: transaction.emoji,
         merch: transaction.merchant,
@@ -119,6 +133,7 @@ export async function getDashboardData() {
         amt: money(transaction.amount),
         time: transaction.time_label,
         income: transaction.is_income,
+        postedDate,
       });
     }
 
@@ -177,6 +192,7 @@ export async function getDashboardData() {
       },
       accounts: [...accountsByGroup.entries()].map(([group, items]) => ({ group, items })),
       spending: spendingResult.rows.map((row) => ({
+        id: Number(row.id),
         cat: row.name,
         color: row.color,
         spent: money(row.spent),
@@ -195,7 +211,7 @@ export async function getDashboardData() {
         by: goal.target_label,
         owner: byMemberSlug(members, Number(goal.owner_member_id)),
       })),
-      transactions: [...transactionsByDay.entries()].map(([day, items]) => ({ day, items })),
+      transactions: [...transactionsByDay.values()],
       bills: billsResult.rows.map((bill) => ({
         date: { m: bill.month_label, d: bill.day_of_month },
         name: bill.name,

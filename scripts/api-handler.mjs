@@ -1,13 +1,15 @@
 import { getDashboardData } from './dashboard-query.mjs';
+import { updateSpendingBudget } from './budget-commands.mjs';
+import { addAccount, syncImportedAccount, updateAccount } from './account-commands.mjs';
 import { updateChoreDone } from './chore-commands.mjs';
-import { addTransaction, deleteTransaction } from './transaction-commands.mjs';
+import { addTransaction, deleteTransaction, updateTransaction } from './transaction-commands.mjs';
 
 function sendJson(res, statusCode, body) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-cache',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, PATCH, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, PATCH, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   });
   res.end(JSON.stringify(body));
@@ -85,7 +87,99 @@ export async function handleApiRequest(req, res) {
       return true;
     }
 
+    if (url.pathname === '/api/accounts' && req.method === 'POST') {
+      const payload = await readJsonBody(req);
+      let account;
+
+      try {
+        account = await addAccount(payload);
+      } catch (error) {
+        sendJson(res, 400, { error: error.message });
+        return true;
+      }
+
+      sendJson(res, 201, { account });
+      return true;
+    }
+
+    if (url.pathname === '/api/accounts/import' && req.method === 'POST') {
+      const payload = await readJsonBody(req);
+      let account;
+
+      try {
+        account = await syncImportedAccount(payload);
+      } catch (error) {
+        sendJson(res, 400, { error: error.message });
+        return true;
+      }
+
+      sendJson(res, account.inserted ? 201 : 200, { account });
+      return true;
+    }
+
+    const spendingMatch = url.pathname.match(/^\/api\/spending-categories\/(\d+)$/);
+    if (spendingMatch && req.method === 'PATCH') {
+      const payload = await readJsonBody(req);
+      let spendingCategory;
+
+      try {
+        spendingCategory = await updateSpendingBudget(Number(spendingMatch[1]), payload);
+      } catch (error) {
+        sendJson(res, 400, { error: error.message });
+        return true;
+      }
+
+      if (!spendingCategory) {
+        sendJson(res, 404, { error: 'Budget category not found' });
+        return true;
+      }
+
+      sendJson(res, 200, { spendingCategory });
+      return true;
+    }
+
+    const accountMatch = url.pathname.match(/^\/api\/accounts\/(\d+)$/);
+    if (accountMatch && req.method === 'PATCH') {
+      const payload = await readJsonBody(req);
+      let account;
+
+      try {
+        account = await updateAccount(Number(accountMatch[1]), payload);
+      } catch (error) {
+        sendJson(res, 400, { error: error.message });
+        return true;
+      }
+
+      if (!account) {
+        sendJson(res, 404, { error: 'Account not found' });
+        return true;
+      }
+
+      sendJson(res, 200, { account });
+      return true;
+    }
+
     const transactionMatch = url.pathname.match(/^\/api\/transactions\/(\d+)$/);
+    if (transactionMatch && req.method === 'PATCH') {
+      const payload = await readJsonBody(req);
+      let transaction;
+
+      try {
+        transaction = await updateTransaction(Number(transactionMatch[1]), payload);
+      } catch (error) {
+        sendJson(res, 400, { error: error.message });
+        return true;
+      }
+
+      if (!transaction) {
+        sendJson(res, 404, { error: 'Transaction not found' });
+        return true;
+      }
+
+      sendJson(res, 200, { transaction });
+      return true;
+    }
+
     if (transactionMatch && req.method === 'DELETE') {
       const transaction = await deleteTransaction(Number(transactionMatch[1]));
 

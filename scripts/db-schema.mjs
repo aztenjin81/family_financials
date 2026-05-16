@@ -31,7 +31,12 @@ const statements = [
       subtitle text,
       icon text,
       balance numeric(14, 2) not null default 0,
-      sort_order integer not null default 0
+      sort_order integer not null default 0,
+      external_provider text,
+      external_item_id text,
+      external_account_id text,
+      imported_at timestamptz,
+      sync_status text
     )
   `,
   `
@@ -62,6 +67,7 @@ const statements = [
       id bigserial primary key,
       household_id bigint not null references households(id) on delete cascade,
       member_id bigint references household_members(id) on delete set null,
+      posted_date date,
       posted_label text not null,
       merchant text not null,
       category text,
@@ -147,6 +153,16 @@ const statements = [
 ];
 
 await withClient(getAppConnectionString(), async (client) => {
+  await client.query('alter table if exists transactions add column if not exists posted_date date');
+  await client.query('alter table if exists accounts add column if not exists external_provider text');
+  await client.query('alter table if exists accounts add column if not exists external_item_id text');
+  await client.query('alter table if exists accounts add column if not exists external_account_id text');
+  await client.query('alter table if exists accounts add column if not exists imported_at timestamptz');
+  await client.query('alter table if exists accounts add column if not exists sync_status text');
+  await client.query(
+    'create unique index if not exists accounts_external_source_key on accounts (household_id, external_provider, external_account_id)',
+  );
+
   for (const statement of statements) {
     await client.query(statement);
   }
