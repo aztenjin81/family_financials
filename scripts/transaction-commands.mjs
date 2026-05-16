@@ -60,6 +60,20 @@ export async function addTransaction(input) {
           join selected_household on selected_household.id = household_members.household_id
           where household_members.slug = $1
         ),
+        selected_posted_label as (
+          select
+            case
+              when $2 = 'Today' then coalesce((
+                select posted_label
+                from transactions
+                where household_id = (select id from selected_household)
+                  and posted_label like 'Today · %'
+                order by sort_order, id
+                limit 1
+              ), $2)
+              else $2
+            end as posted_label
+        ),
         next_sort as (
           select coalesce(max(sort_order), -1) + 1 as sort_order
           from transactions
@@ -80,7 +94,7 @@ export async function addTransaction(input) {
         select
           selected_household.id,
           selected_member.id,
-          $2,
+          selected_posted_label.posted_label,
           $3,
           $4,
           $5,
@@ -88,7 +102,7 @@ export async function addTransaction(input) {
           $7,
           $8,
           next_sort.sort_order
-        from selected_household, selected_member, next_sort
+        from selected_household, selected_member, selected_posted_label, next_sort
         returning id, posted_label, merchant, category, amount, time_label, emoji, is_income
       `,
       [

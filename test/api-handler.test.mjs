@@ -109,7 +109,10 @@ test('handleApiRequest validates transaction insert payloads', async () => {
 
 test('handleApiRequest inserts a transaction and can clean it up', async () => {
   const merchant = `Test Transaction ${Date.now()}`;
+  const todayGroup = (await getDashboardData()).transactions.find((group) => group.day.startsWith('Today · '));
   let transactionId = null;
+
+  assert.ok(todayGroup);
 
   try {
     const response = createResponse();
@@ -136,10 +139,14 @@ test('handleApiRequest inserts a transaction and can clean it up', async () => {
     assert.equal(response.statusCode, 201);
     assert.equal(data.transaction.merchant, merchant);
     assert.equal(data.transaction.amount, -12.34);
+    assert.equal(data.transaction.postedLabel, todayGroup.day);
 
     const dashboard = await getDashboardData();
-    const merchants = dashboard.transactions.flatMap((group) => group.items.map((item) => item.merch));
-    assert.ok(merchants.includes(merchant));
+    const insertedGroup = dashboard.transactions.find((group) => (
+      group.items.some((item) => item.merch === merchant)
+    ));
+
+    assert.equal(insertedGroup.day, todayGroup.day);
   } finally {
     if (transactionId) {
       await withClient(getAppConnectionString(), async (client) => {

@@ -4,7 +4,6 @@ Track agreed product and engineering ideas here. Keep entries short, actionable,
 
 ## Product
 
-- Merge newly added transactions into the current dated "Today" group instead of creating a separate plain `Today` group.
 - Add transaction edit/delete actions.
 - Auto-fill transaction category, member, and icon from prior merchant history.
 - Improve merchant suggestions beyond simple transaction scanning if repeated-merchant behavior needs ranking or aliases.
