@@ -12,7 +12,6 @@ Track agreed product and engineering ideas here. Keep entries short, actionable,
 - Add account creation/editing for the Accounts plus button.
 - Make account counts, linked institution counts, and "Synced 4 min ago" real data instead of hardcoded text.
 - Add real net-worth range filtering for `1M`, `3M`, `6M`, `1Y`, and `ALL`.
-- Make monthly budget status labels real, including over-budget and warning states.
 - Make cashflow health status real instead of hardcoded `healthy`.
 - Replace hardcoded cashflow starting balance with database-backed checking/cash balance logic.
 - Add budget editing from the "Adjust budget" action and spending category rows.

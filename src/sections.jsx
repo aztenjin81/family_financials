@@ -3,6 +3,7 @@
 import { Fragment } from 'react';
 import { useAppState } from './app/AppState.jsx';
 import { Avatar, Delta, Icon, MemberDot, MoneyV, Ring, Sparkline } from './components.jsx';
+import { getBudgetStatus } from './lib/budget.js';
 import { countDashboardAccounts, formatAccountCount } from './lib/accounts.js';
 import { formatBillsWindowLabel } from './lib/date-range.js';
 
@@ -40,6 +41,7 @@ export function HeroSpend({ hidden }) {
   const s = DATA.monthSpend;
   const pct = s.spent / s.budget;
   const remain = s.budget - s.spent;
+  const budgetStatus = getBudgetStatus(s.spent, s.budget);
   return (
     <div className="card">
       <div className="card-header">
@@ -47,7 +49,7 @@ export function HeroSpend({ hidden }) {
           <div className="card-label">This month · May</div>
           <div className="card-title" style={{ marginTop: 4 }}>Spend so far</div>
         </div>
-        <span className="tag ok">on track</span>
+        <span className={`tag ${budgetStatus.tagClass}`}>{budgetStatus.label}</span>
       </div>
       <div className="ring-stat">
         <Ring value={s.spent} total={s.budget} size={100} stroke={11} color="var(--red)" track="var(--paper-2)">
