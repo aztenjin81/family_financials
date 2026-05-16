@@ -1,11 +1,21 @@
 import { normalizeAccountInput, normalizeImportedAccountInput } from './account-input.mjs';
 import { getAppConnectionString, withClient } from './db-utils.mjs';
+import {
+  addMockAccount,
+  isMockDatabaseEnabled,
+  syncMockImportedAccount,
+  updateMockAccount,
+} from './mock-db.mjs';
 
 function asNumber(value) {
   return Number(value || 0);
 }
 
 export async function addAccount(input) {
+  if (isMockDatabaseEnabled()) {
+    return addMockAccount(input);
+  }
+
   const account = normalizeAccountInput(input);
 
   return withClient(getAppConnectionString(), async (client) => {
@@ -78,6 +88,10 @@ export async function addAccount(input) {
 }
 
 export async function updateAccount(accountId, input) {
+  if (isMockDatabaseEnabled()) {
+    return updateMockAccount(accountId, input);
+  }
+
   const account = normalizeAccountInput(input);
 
   return withClient(getAppConnectionString(), async (client) => {
@@ -141,6 +155,10 @@ export async function updateAccount(accountId, input) {
 }
 
 export async function syncImportedAccount(input) {
+  if (isMockDatabaseEnabled()) {
+    return syncMockImportedAccount(input);
+  }
+
   const account = normalizeImportedAccountInput(input);
 
   return withClient(getAppConnectionString(), async (client) => {

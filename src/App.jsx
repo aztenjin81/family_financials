@@ -3,14 +3,14 @@ import { AppShell } from './layout/AppShell.jsx';
 import { OverviewPage } from './pages/OverviewPage.jsx';
 import { PlaceholderPage } from './pages/PlaceholderPage.jsx';
 
-function CurrentPage() {
+function CurrentPage(props) {
   const { activePage } = useAppState();
 
   if (activePage === 'overview') {
-    return <OverviewPage />;
+    return <OverviewPage {...props} />;
   }
 
-  return <PlaceholderPage page={activePage} />;
+  return <PlaceholderPage page={activePage} {...props} />;
 }
 
 function App() {

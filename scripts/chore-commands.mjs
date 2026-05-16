@@ -1,6 +1,11 @@
 import { getAppConnectionString, withClient } from './db-utils.mjs';
+import { isMockDatabaseEnabled, updateMockChoreDone } from './mock-db.mjs';
 
 export async function updateChoreDone(choreId, done) {
+  if (isMockDatabaseEnabled()) {
+    return updateMockChoreDone(choreId, done);
+  }
+
   return withClient(getAppConnectionString(), async (client) => {
     const result = await client.query(
       `

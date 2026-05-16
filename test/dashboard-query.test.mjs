@@ -22,6 +22,21 @@ test('dashboard query exposes John-facing account data', async () => {
   assert.equal(accountNames.some((name) => name.includes('Alex')), false);
 });
 
+test('dashboard query exposes account ids for edit actions', async () => {
+  const data = await getDashboardData();
+  const account = data.accounts.flatMap((group) => group.items)[0];
+
+  assert.equal(typeof account.id, 'number');
+  assert.ok(account.id > 0);
+});
+
+test('dashboard query exposes spending category ids for budget edits', async () => {
+  const data = await getDashboardData();
+
+  assert.equal(typeof data.spending[0].id, 'number');
+  assert.ok(data.spending[0].id > 0);
+});
+
 test('dashboard query exposes real household members and merchant suggestions', async () => {
   const data = await getDashboardData();
 

@@ -14,7 +14,7 @@ import {
   TransactionsCard,
 } from '../sections.jsx';
 
-export function OverviewPage() {
+export function OverviewPage({ onAddAccount, onEditAccount, onEditTransaction, onAdjustBudget }) {
   const {
     chores,
     hidden,
@@ -28,20 +28,20 @@ export function OverviewPage() {
       <div className="grid hero-grid">
         <HeroNetWorth hidden={hidden} range={netWorthRange} setRange={setNetWorthRange} />
         <HeroSpend hidden={hidden} />
-        <HeroCashflow hidden={hidden} />
+        <HeroCashflow hidden={hidden} onAdjustBudget={onAdjustBudget} />
       </div>
 
       <div className="grid main-grid">
-        <AccountsRail hidden={hidden} />
+        <AccountsRail hidden={hidden} onAddAccount={onAddAccount} onEditAccount={onEditAccount} />
         <div className="stack">
-          <SpendingCard hidden={hidden} />
+          <SpendingCard hidden={hidden} onAdjustBudget={onAdjustBudget} />
           <ForecastCard hidden={hidden} />
         </div>
         <GoalsCard hidden={hidden} />
       </div>
 
       <div className="grid bottom-grid">
-        <TransactionsCard hidden={hidden} />
+        <TransactionsCard hidden={hidden} onEditTransaction={onEditTransaction} />
         <BillsCard hidden={hidden} />
         <div className="stack">
           <InvestmentsCard hidden={hidden} />

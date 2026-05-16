@@ -1,4 +1,5 @@
 import { getAppConnectionString, withClient } from './db-utils.mjs';
+import { getMockDashboardData, isMockDatabaseEnabled } from './mock-db.mjs';
 import { formatTransactionDayLabel, parseTransactionDateLabel } from '../src/lib/transaction-date.js';
 
 function money(value) {
@@ -10,6 +11,10 @@ function byMemberSlug(members, id) {
 }
 
 export async function getDashboardData() {
+  if (isMockDatabaseEnabled()) {
+    return getMockDashboardData();
+  }
+
   return withClient(getAppConnectionString(), async (client) => {
     const householdResult = await client.query(`
       select id, name, as_of, insight

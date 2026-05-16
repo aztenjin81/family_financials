@@ -16,6 +16,19 @@ function updateChoreInDashboard(data, choreId, done) {
   };
 }
 
+function updateSpendingCategoryInDashboard(data, categoryKey, budget) {
+  return {
+    ...data,
+    spending: data.spending.map((category) => (
+      category.id === categoryKey
+      || category.cat === categoryKey
+      || category.name === categoryKey
+        ? { ...category, budget }
+        : category
+    )),
+  };
+}
+
 export function AppStateProvider({ children }) {
   const [hidden, setHidden] = useState(false);
   const [activePage, setActivePage] = useState('overview');
@@ -86,6 +99,74 @@ export function AppStateProvider({ children }) {
     return data;
   }
 
+  async function addAccount(account) {
+    await requestJson('/api/accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(account),
+    });
+
+    const data = await requestJson('/api/dashboard');
+    setDashboardData(data);
+    setDashboardSource('database');
+    return data;
+  }
+
+  async function updateSpendingBudget(category, budget) {
+    const nextBudget = Number(budget);
+
+    if (!category || !Number.isFinite(nextBudget)) {
+      throw new Error('Budget must be a number');
+    }
+
+    if (dashboardSource !== 'database' || category.id == null) {
+      setDashboardData((current) => updateSpendingCategoryInDashboard(current, category.id ?? category.cat ?? category.name, nextBudget));
+      return {
+        spendingCategory: {
+          ...category,
+          budget: nextBudget,
+        },
+      };
+    }
+
+    await requestJson(`/api/spending-categories/${category.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ budget: nextBudget }),
+    });
+
+    const data = await requestJson('/api/dashboard');
+    setDashboardData(data);
+    setDashboardSource('database');
+    return data;
+  }
+
+  async function updateAccount(accountId, account) {
+    await requestJson(`/api/accounts/${accountId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(account),
+    });
+
+    const data = await requestJson('/api/dashboard');
+    setDashboardData(data);
+    setDashboardSource('database');
+    return data;
+  }
+
+  async function updateTransaction(transactionId, transaction) {
+    await requestJson(`/api/transactions/${transactionId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(transaction),
+    });
+
+    const data = await requestJson('/api/dashboard');
+    setDashboardData(data);
+    setDashboardSource('database');
+    return data;
+  }
+
   async function deleteTransaction(transactionId) {
     await requestJson(`/api/transactions/${transactionId}`, {
       method: 'DELETE',
@@ -108,7 +189,11 @@ export function AppStateProvider({ children }) {
     setNetWorthRange,
     chores,
     toggleChore,
+    addAccount,
+    updateAccount,
+    updateSpendingBudget,
     addTransaction,
+    updateTransaction,
     deleteTransaction,
     showInsight,
     dismissInsight: () => setShowInsight(false),

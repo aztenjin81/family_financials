@@ -4,7 +4,8 @@ set -e
 echo "Running pre-commit checks..."
 
 npm run security:secrets
-npm test
+# node --test --test-concurrency=1
+exec ./scripts/run-tests.sh
 npm run build
 
 echo "Pre-commit checks passed."

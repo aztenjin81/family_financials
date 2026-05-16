@@ -474,6 +474,14 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--paper-2);
   color: var(--ink);
 }
+.acct-edit {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.acct-edit:hover {
+  background: var(--card-2);
+}
 .acct-name { font-weight: 500; font-size: 13px; }
 .acct-sub { font-size: 11px; color: var(--mute); }
 .acct-bal { text-align: right; }
@@ -501,7 +509,7 @@ button { font-family: inherit; cursor: pointer; }
 /* ============ Spending bars ============ */
 .spend-row {
   display: grid;
-  grid-template-columns: 148px 1fr 140px;
+  grid-template-columns: 148px 1fr 140px auto;
   gap: 14px;
   align-items: center;
   padding: 10px 0;
@@ -566,6 +574,43 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 12px;
 }
 .spend-vals .of { color: var(--mute); }
+.spend-edit {
+  justify-self: end;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--mute);
+  font-size: 11px;
+  padding: 5px 10px;
+}
+.spend-edit:hover {
+  background: var(--card-2);
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+
+/* ============ Budget modal ============ */
+.budget-summary {
+  display: grid;
+  grid-template-columns: 1.5fr auto;
+  gap: 16px;
+  align-items: end;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-2);
+  margin-bottom: 14px;
+}
+.budget-name {
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1.1;
+}
+.budget-spent {
+  font-family: var(--mono);
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
 
 /* ============ Cashflow chart ============ */
 .cashflow-chart {
@@ -661,6 +706,21 @@ button { font-family: inherit; cursor: pointer; }
 }
 .txn-amt { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
 .txn-amt.income { color: var(--green); }
+.txn-edit {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mute);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+.txn-edit:hover {
+  background: var(--card-2);
+  color: var(--ink);
+}
 .txn-delete {
   width: 24px;
   height: 24px;

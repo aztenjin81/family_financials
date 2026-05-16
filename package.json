@@ -4,12 +4,15 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite --host 0.0.0.0",
     "dev:all": "node scripts/dev-all.mjs",
+    "e2e": "playwright test",
+    "live": "node scripts/live.mjs",
+    "live:install": "node scripts/install-live-service.mjs",
     "build": "vite build",
-    "test": "node --test",
+    "test": "./scripts/run-tests.sh",
     "security:secrets": "gitleaks protect --staged --redact --verbose",
-    "preview": "vite preview --host 127.0.0.1",
+    "preview": "vite preview --host 0.0.0.0",
     "serve": "node scripts/serve-dist.mjs",
     "api": "node scripts/api-server.mjs",
     "db:create": "node scripts/db-create.mjs",
@@ -23,5 +26,8 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "vite": "^7.2.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
   }
 }

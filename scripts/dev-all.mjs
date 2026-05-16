@@ -16,20 +16,32 @@ const processes = [
 ];
 
 let shuttingDown = false;
-const children = processes.map(({ name, command, args }) => {
-  const child = spawn(command, args, {
+const children = new Map();
+
+function spawnChild(processConfig) {
+  const child = spawn(processConfig.command, processConfig.args, {
     stdio: 'inherit',
     windowsHide: true,
   });
+
+  children.set(processConfig.name, child);
 
   child.on('exit', (code, signal) => {
     if (shuttingDown) {
       return;
     }
 
-    shuttingDown = true;
-    stopChildren(child);
-    process.exitCode = code ?? (signal ? 1 : 0);
+    console.error(`${processConfig.name} exited unexpectedly, restarting...`);
+    children.delete(processConfig.name);
+    setTimeout(() => {
+      if (!shuttingDown) {
+        spawnChild(processConfig);
+      }
+    }, 1000);
+
+    if (code || signal) {
+      process.exitCode = 1;
+    }
   });
 
   child.on('error', (error) => {
@@ -37,17 +49,23 @@ const children = processes.map(({ name, command, args }) => {
       return;
     }
 
-    shuttingDown = true;
-    console.error(`Failed to start ${name}: ${error.message}`);
-    stopChildren(child);
+    console.error(`Failed to start ${processConfig.name}: ${error.message}`);
+    children.delete(processConfig.name);
+    setTimeout(() => {
+      if (!shuttingDown) {
+        spawnChild(processConfig);
+      }
+    }, 1000);
     process.exitCode = 1;
   });
 
   return child;
-});
+}
+
+processes.forEach(spawnChild);
 
 function stopChildren(exceptChild) {
-  for (const child of children) {
+  for (const child of children.values()) {
     if (child === exceptChild || child.killed) {
       continue;
     }
