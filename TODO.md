@@ -26,6 +26,7 @@ Track agreed product and engineering ideas here. Keep entries short, actionable,
 - Implement kids allowance history.
 - Implement "Pay weekly allowance" so it writes jar balances and creates auditable allowance activity.
 - Add smarter chore suggestions later, using kid ages and household context.
+- Store household member birthdays/DOBs and derive displayed ages from DOB versus the current date.
 - Add chore creation/editing and age-aware chore templates for Kristen, Jason, Lauren, and Ian.
 - Decide how adult/older-teen household members should appear in kids allowance views as Kristen gets adult workflows.
 - Add a dashboard state indicator when the app is using fixture fallback instead of database data.
