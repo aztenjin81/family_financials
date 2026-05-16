@@ -1,0 +1,25 @@
+{
+  "name": "family-financials",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "test": "node --test",
+    "preview": "vite preview --host 127.0.0.1",
+    "serve": "node scripts/serve-dist.mjs",
+    "api": "node scripts/api-server.mjs",
+    "db:create": "node scripts/db-create.mjs",
+    "db:schema": "node scripts/db-schema.mjs",
+    "db:seed": "node scripts/db-seed.mjs",
+    "db:inspect": "node scripts/db-inspect.mjs"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.1.1",
+    "pg": "^8.20.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "vite": "^7.2.7"
+  }
+}

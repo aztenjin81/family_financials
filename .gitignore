@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.log
+codex_db_credentials.md
+.env
+.env.*
