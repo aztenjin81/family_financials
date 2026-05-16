@@ -21,6 +21,7 @@ The household members are John and Stephanie, plus Kristen (18), Jason (10), Lau
 - Every commit must pass the repo pre-commit hook. The hook must include a Gitleaks staged secret scan and must halt commits on failure.
 - Run focused tests while developing new behavior. The pre-commit hook is the mandatory final local gate for the full secret scan, test suite, and build.
 - Commit completed, tested checkpoints to git whenever it makes sense. Prefer small coherent commits over large mixed changes.
+- Maintain `TODO.md` whenever new product or engineering ideas are agreed upon. Add, update, or remove entries in the same change that establishes the agreement or completes the work.
 - Use the existing scripts for database work:
   - `npm run db:create`
   - `npm run db:schema`

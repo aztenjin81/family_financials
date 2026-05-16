@@ -30,3 +30,16 @@ test('README documents hook setup', () => {
   assert.match(readme, /git config core\.hooksPath \.githooks/);
   assert.match(readme, /npm run security:secrets/);
 });
+
+test('agent instructions require maintaining the todo file', () => {
+  const instructions = fs.readFileSync('AGENTS.md', 'utf8');
+
+  assert.match(instructions, /Maintain `TODO\.md`/);
+});
+
+test('todo file tracks agreed future work', () => {
+  const todo = fs.readFileSync('TODO.md', 'utf8');
+
+  assert.match(todo, /Auto-fill transaction category/);
+  assert.match(todo, /transaction edit\/delete/);
+});
