@@ -7,6 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "test": "node --test",
+    "security:secrets": "gitleaks protect --staged --redact --verbose",
     "preview": "vite preview --host 127.0.0.1",
     "serve": "node scripts/serve-dist.mjs",
     "api": "node scripts/api-server.mjs",

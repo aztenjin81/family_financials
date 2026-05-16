@@ -15,6 +15,24 @@ The dev server runs with Vite. For a production build:
 npm run build
 ```
 
+## Commit Checks
+
+This repo uses a tracked git hook path:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The pre-commit hook runs:
+
+```bash
+npm run security:secrets
+npm test
+npm run build
+```
+
+`npm run security:secrets` uses Gitleaks to scan staged changes and blocks the commit if credentials or API keys are detected.
+
 To serve the built app without Vite:
 
 ```bash

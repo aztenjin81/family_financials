@@ -18,8 +18,8 @@ The primary user is John. User-facing household data should use John, not Alex. 
 
 - Prefer small, verifiable changes.
 - Every behavior change must include automated tests in the same change. Do not leave new app, API, or database behavior untested.
-- Run `npm test` after adding or changing tests.
-- Run `npm run build` after frontend or API changes.
+- Every commit must pass the repo pre-commit hook. The hook must include a Gitleaks staged secret scan and must halt commits on failure.
+- Run focused tests while developing new behavior. The pre-commit hook is the mandatory final local gate for the full secret scan, test suite, and build.
 - Commit completed, tested checkpoints to git whenever it makes sense. Prefer small coherent commits over large mixed changes.
 - Use the existing scripts for database work:
   - `npm run db:create`
