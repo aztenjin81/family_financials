@@ -60,6 +60,12 @@ To install the live site as a user service that starts on login and restarts aut
 npm run live:install
 ```
 
+To install the Plaid webhook listener as a separate user service that reads `.env.plaid-webhook`:
+
+```bash
+npm run plaid:webhook:install
+```
+
 ## Database
 
 Database scripts read connection details from `DATABASE_URL` or `POSTGRES_URL`, and also from `codex_db_credentials.md`, `.env.local`, or `.env` if present. They do not use the `hermes` database for app data. The admin connection is rewritten to the `postgres` maintenance database, and the app connection is rewritten to `family_financials`.

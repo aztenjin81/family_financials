@@ -5,6 +5,8 @@ import test from 'node:test';
 import { handleApiRequest } from '../scripts/api-handler.mjs';
 import { getDashboardData } from '../scripts/dashboard-query.mjs';
 import { getAppConnectionString, withClient } from '../scripts/db-utils.mjs';
+import { resetMockDatabase } from '../scripts/mock-db.mjs';
+import { getSuggestedChoreTemplates } from '../src/lib/chore-templates.js';
 
 function createResponse() {
   const response = new EventEmitter();
@@ -91,6 +93,19 @@ test('handleApiRequest returns 404 for missing chore ids', async () => {
   assert.equal(data.error, 'Chore not found');
 });
 
+test('handleApiRequest validates chore creation payloads', async () => {
+  const response = createResponse();
+  const handled = await handleApiRequest(
+    createRequest({ method: 'POST', url: '/api/chores', body: { memberSlug: '', label: '', reward: -1 } }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(handled, true);
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Member is required');
+});
+
 test('handleApiRequest updates chore completion and can restore it', async () => {
   const dashboard = await getDashboardData();
   const chore = dashboard.kids.flatMap((kid) => kid.chores)[0];
@@ -121,6 +136,125 @@ test('handleApiRequest updates chore completion and can restore it', async () =>
   }
 });
 
+test('handleApiRequest creates a chore from an age-aware suggestion', async () => {
+  const dashboard = await getDashboardData();
+  const kid = dashboard.kids.find((entry) => entry.age >= 10);
+  const suggestion = kid ? getSuggestedChoreTemplates(kid.age)[0] : null;
+  const template = suggestion ? { memberSlug: kid.who, label: suggestion.label, reward: suggestion.reward } : null;
+
+  assert.ok(template);
+
+  const response = createResponse();
+  const handled = await handleApiRequest(
+    createRequest({ method: 'POST', url: '/api/chores', body: template }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(handled, true);
+  assert.equal(response.statusCode, 201);
+  assert.equal(data.chore.label, template.label);
+  assert.equal(data.chore.done, false);
+});
+
+test('handleApiRequest updates and moves a chore', async () => {
+  const dashboard = await getDashboardData();
+  const choreOwner = dashboard.kids.find((kid) => kid.chores.length > 0);
+  const chore = choreOwner.chores[0];
+  const nextLabel = `${chore.label} updated`;
+  const nextReward = Number((chore.reward + 0.5).toFixed(2));
+
+  try {
+    const response = createResponse();
+    const handled = await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/chores/${chore.id}`,
+        body: {
+          memberSlug: dashboard.kids[1]?.who || dashboard.kids[0].who,
+          label: nextLabel,
+          reward: nextReward,
+          done: !chore.done,
+        },
+      }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+
+    assert.equal(handled, true);
+    assert.equal(response.statusCode, 200);
+    assert.equal(data.chore.id, chore.id);
+    assert.equal(data.chore.label, nextLabel);
+    assert.equal(data.chore.reward, nextReward);
+    assert.equal(data.chore.done, !chore.done);
+  } finally {
+    const restoreResponse = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/chores/${chore.id}`,
+        body: {
+          memberSlug: choreOwner.who,
+          label: chore.label,
+          reward: chore.reward,
+          done: chore.done,
+        },
+      }),
+      restoreResponse,
+    );
+  }
+});
+
+test('handleApiRequest deletes a chore and can restore the list', async () => {
+  const dashboard = await getDashboardData();
+  const kid = dashboard.kids.find((entry) => entry.age >= 10) || dashboard.kids[0];
+  const template = getSuggestedChoreTemplates(kid.age)[0];
+
+  assert.ok(template);
+
+  const createResponseHandle = createResponse();
+  const createHandled = await handleApiRequest(
+    createRequest({
+      method: 'POST',
+      url: '/api/chores',
+      body: { memberSlug: kid.who, label: template.label, reward: template.reward },
+    }),
+    createResponseHandle,
+  );
+  const createdData = JSON.parse(createResponseHandle.body);
+  const createdId = createdData.chore.id;
+  const beforeCount = dashboard.kids.flatMap((entry) => entry.chores).length;
+
+  assert.equal(createHandled, true);
+  assert.equal(createResponseHandle.statusCode, 201);
+
+  try {
+    const deleteResponse = createResponse();
+    const deletedHandled = await handleApiRequest(
+      createRequest({ method: 'DELETE', url: `/api/chores/${createdId}` }),
+      deleteResponse,
+    );
+    const deleteData = JSON.parse(deleteResponse.body);
+    const after = await getDashboardData();
+
+    assert.equal(deletedHandled, true);
+    assert.equal(deleteResponse.statusCode, 200);
+    assert.equal(deleteData.chore.id, createdId);
+    assert.equal(after.kids.flatMap((entry) => entry.chores).length, beforeCount);
+  } finally {
+    const cleanupDashboard = await getDashboardData();
+    const stillThere = cleanupDashboard.kids.flatMap((entry) => entry.chores).find((item) => item.id === createdId);
+
+    if (stillThere) {
+      const cleanupResponse = createResponse();
+      await handleApiRequest(
+        createRequest({ method: 'DELETE', url: `/api/chores/${createdId}` }),
+        cleanupResponse,
+      );
+    }
+  }
+});
+
 test('handleApiRequest validates transaction insert payloads', async () => {
   const response = createResponse();
   await handleApiRequest(
@@ -146,9 +280,15 @@ test('handleApiRequest rejects malformed transaction JSON', async () => {
 });
 
 test('handleApiRequest validates transaction update payloads', async () => {
+  const dashboard = await getDashboardData();
+  const transaction = dashboard.transactions.flatMap((group) => group.items)[0];
   const response = createResponse();
   await handleApiRequest(
-    createRequest({ method: 'PATCH', url: '/api/transactions/1', body: { merchant: '', amount: 'bad' } }),
+    createRequest({
+      method: 'PATCH',
+      url: `/api/transactions/${transaction.id}`,
+      body: { merchant: '', amount: 'bad' },
+    }),
     response,
   );
   const data = JSON.parse(response.body);
@@ -257,6 +397,241 @@ test('handleApiRequest validates account update payloads', async () => {
   assert.equal(data.error, 'Account group is required');
 });
 
+test('handleApiRequest pays weekly allowance and records a history batch', async () => {
+  resetMockDatabase();
+  const before = await getDashboardData();
+  const updateResponse = createResponse();
+  const response = createResponse();
+
+  try {
+    await handleApiRequest(
+      createRequest({ method: 'PATCH', url: '/api/household/allowance', body: { weeklyAmount: 7.5 } }),
+      updateResponse,
+    );
+
+    await handleApiRequest(
+      createRequest({ method: 'POST', url: '/api/allowance/pay-weekly' }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+    const after = await getDashboardData();
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(data.allowancePayment.entries.length, before.kids.length);
+    assert.equal(data.allowancePayment.entries[0].weeklyAmount, 7.5);
+    assert.equal(data.allowancePayment.total, before.kids.length * 7.5);
+    assert.equal(after.allowanceHistory.length, before.allowanceHistory.length + 1);
+    assert.equal(after.allowanceHistory[0].entries.length, before.kids.length);
+    assert.equal(after.kids[0].balance, before.kids[0].balance + 7.5);
+  } finally {
+    const restoreAllowance = createResponse();
+    await handleApiRequest(
+      createRequest({ method: 'PATCH', url: '/api/household/allowance', body: { weeklyAmount: 5 } }),
+      restoreAllowance,
+    );
+    resetMockDatabase();
+  }
+});
+
+test('handleApiRequest updates the household weekly allowance amount', async () => {
+  resetMockDatabase();
+  const response = createResponse();
+
+  try {
+    await handleApiRequest(
+      createRequest({ method: 'PATCH', url: '/api/household/allowance', body: { weeklyAmount: 7.5 } }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+    const after = await getDashboardData();
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(data.allowance.weeklyAmount, 7.5);
+    assert.equal(after.allowance.weeklyAmount, 7.5);
+  } finally {
+    resetMockDatabase();
+  }
+});
+
+test('handleApiRequest voids the latest allowance payout and restores jar balances', async () => {
+  resetMockDatabase();
+  const before = await getDashboardData();
+  const payResponse = createResponse();
+  const voidResponse = createResponse();
+
+  try {
+    await handleApiRequest(
+      createRequest({ method: 'POST', url: '/api/allowance/pay-weekly' }),
+      payResponse,
+    );
+
+    const paid = await getDashboardData();
+
+    await handleApiRequest(
+      createRequest({ method: 'POST', url: '/api/allowance/void-latest' }),
+      voidResponse,
+    );
+
+    const data = JSON.parse(voidResponse.body);
+    const after = await getDashboardData();
+
+    assert.equal(voidResponse.statusCode, 200);
+    assert.equal(data.allowanceReversal.entries.length, before.kids.length);
+    assert.equal(data.allowanceReversal.total, -before.kids.length * before.allowance.weeklyAmount);
+    assert.equal(paid.kids[0].balance, before.kids[0].balance + before.allowance.weeklyAmount);
+    assert.equal(after.kids[0].balance, before.kids[0].balance);
+    assert.equal(after.allowanceHistory[0].total, -before.kids.length * before.allowance.weeklyAmount);
+  } finally {
+    resetMockDatabase();
+  }
+});
+
+test('handleApiRequest validates goal insert payloads', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({
+      method: 'POST',
+      url: '/api/goals',
+      body: { ownerSlug: 'john', name: '', currentAmount: 0, targetAmount: 100 },
+    }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Goal name is required');
+});
+
+test('handleApiRequest rejects malformed goal JSON', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({ method: 'POST', url: '/api/goals', rawBody: '{' }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Invalid JSON');
+});
+
+test('handleApiRequest validates investment holding update payloads', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({
+      method: 'PATCH',
+      url: '/api/investments/1',
+      body: { ticker: '', name: 'Test holding', value: 'bad', dailyChangePercent: 1.2 },
+    }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Ticker is required');
+});
+
+test('handleApiRequest returns 404 for missing investment holding ids', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({
+      method: 'PATCH',
+      url: '/api/investments/999999',
+      body: { ticker: 'TEST', name: 'Missing holding', value: 10, dailyChangePercent: 1 },
+    }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(data.error, 'Holding not found');
+});
+
+test('handleApiRequest updates an investment holding and can restore it', async () => {
+  const dashboard = await getDashboardData();
+  const holding = dashboard.investments.holdings[0];
+  const nextValue = Number((holding.val + 50).toFixed(2));
+  const nextChange = Number((holding.d + 0.15).toFixed(2));
+
+  try {
+    const response = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/investments/${holding.id}`,
+        body: {
+          ticker: holding.tk,
+          name: `${holding.name} Updated`,
+          value: nextValue,
+          dailyChangePercent: nextChange,
+        },
+      }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(data.holding.id, holding.id);
+    assert.equal(data.holding.name, `${holding.name} Updated`);
+    assert.equal(data.holding.value, nextValue);
+    assert.equal(data.holding.dailyChangePercent, nextChange);
+
+    const changedDashboard = await getDashboardData();
+    const changedHolding = changedDashboard.investments.holdings.find((item) => item.id === holding.id);
+    assert.equal(changedHolding.name, `${holding.name} Updated`);
+    assert.equal(changedHolding.val, nextValue);
+  } finally {
+    const restoreResponse = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/investments/${holding.id}`,
+        body: {
+          ticker: holding.tk,
+          name: holding.name,
+          value: holding.val,
+          dailyChangePercent: holding.d,
+        },
+      }),
+      restoreResponse,
+    );
+  }
+});
+
+test('handleApiRequest validates bill insert payloads', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({
+      method: 'POST',
+      url: '/api/bills',
+      body: {
+        memberSlug: 'john',
+        monthLabel: '',
+        dayOfMonth: 14,
+        name: '',
+        subtitle: '',
+        amount: 22.99,
+      },
+    }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Month label is required');
+});
+
+test('handleApiRequest rejects malformed bill JSON', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({ method: 'POST', url: '/api/bills', rawBody: '{' }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Invalid JSON');
+});
+
 test('handleApiRequest rejects malformed account update JSON', async () => {
   const response = createResponse();
   await handleApiRequest(
@@ -293,6 +668,220 @@ test('handleApiRequest returns 404 for missing budget category ids', async () =>
   assert.equal(data.error, 'Budget category not found');
 });
 
+test('handleApiRequest returns 404 for missing goal ids', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({
+      method: 'PATCH',
+      url: '/api/goals/999999',
+      body: {
+        ownerSlug: 'john',
+        name: 'Missing goal',
+        currentAmount: 0,
+        targetAmount: 10,
+        color: '#1F7A4D',
+        targetLabel: 'by December',
+      },
+    }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(data.error, 'Goal not found');
+});
+
+test('handleApiRequest validates debt insert payloads', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({
+      method: 'POST',
+      url: '/api/debts',
+      body: {
+        name: '',
+        paid: 0,
+        total: 1000,
+        apr: 5,
+        pmt: 25,
+        end: 'May 2026',
+      },
+    }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Debt name is required');
+});
+
+test('handleApiRequest rejects malformed debt JSON', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({ method: 'POST', url: '/api/debts', rawBody: '{' }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Invalid JSON');
+});
+
+test('handleApiRequest returns 404 for missing debt ids', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({
+      method: 'PATCH',
+      url: '/api/debts/999999',
+      body: {
+        name: 'Missing debt',
+        paid: 0,
+        total: 1000,
+        apr: 5,
+        pmt: 25,
+        end: 'May 2026',
+        revolving: false,
+      },
+    }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(data.error, 'Debt not found');
+});
+
+test('handleApiRequest validates bill status payloads', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({ method: 'PATCH', url: '/api/bills/1/status', body: { status: '' } }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(data.error, 'Status is required');
+});
+
+test('handleApiRequest returns 404 for missing bill ids', async () => {
+  const response = createResponse();
+  await handleApiRequest(
+    createRequest({
+      method: 'PATCH',
+      url: '/api/bills/999999',
+      body: {
+        memberSlug: 'john',
+        monthLabel: 'May',
+        dayOfMonth: 14,
+        name: 'Missing bill',
+        subtitle: '',
+        amount: 25,
+        isSoon: true,
+        status: 'upcoming',
+      },
+    }),
+    response,
+  );
+  const data = JSON.parse(response.body);
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(data.error, 'Bill not found');
+});
+
+test('handleApiRequest inserts a debt and can clean it up', async () => {
+  const name = `Test Debt ${Date.now()}`;
+  let debtId = null;
+
+  try {
+    const response = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'POST',
+        url: '/api/debts',
+        body: {
+          name,
+          paid: 12.34,
+          total: 1200,
+          apr: 7.5,
+          pmt: 45.67,
+          end: 'Jun 2027',
+          revolving: false,
+        },
+      }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+    debtId = data.debt.id;
+
+    assert.equal(response.statusCode, 201);
+    assert.equal(data.debt.name, name);
+    assert.equal(data.debt.paid, 12.34);
+    assert.equal(data.debt.total, 1200);
+  } finally {
+    if (debtId) {
+      await withClient(getAppConnectionString(), async (client) => {
+        await client.query('delete from debts where id = $1', [debtId]);
+      });
+    }
+  }
+});
+
+test('handleApiRequest updates a debt and can restore it', async () => {
+  const dashboard = await getDashboardData();
+  const debt = dashboard.debts[0];
+  const nextPaid = Number((debt.paid + 25).toFixed(2));
+  const nextPmt = Number((debt.pmt + 5).toFixed(2));
+
+  try {
+    const response = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/debts/${debt.id}`,
+        body: {
+          name: `${debt.name} Updated`,
+          paid: nextPaid,
+          total: debt.total,
+          apr: debt.apr,
+          pmt: nextPmt,
+          end: debt.end,
+          revolving: debt.revolving,
+        },
+      }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(data.debt.id, debt.id);
+    assert.equal(data.debt.name, `${debt.name} Updated`);
+    assert.equal(data.debt.paid, nextPaid);
+    assert.equal(data.debt.pmt, nextPmt);
+
+    const changedDashboard = await getDashboardData();
+    const changedDebt = changedDashboard.debts.find((item) => item.id === debt.id);
+    assert.equal(changedDebt.name, `${debt.name} Updated`);
+    assert.equal(changedDebt.paid, nextPaid);
+  } finally {
+    const restoreResponse = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/debts/${debt.id}`,
+        body: {
+          name: debt.name,
+          paid: debt.paid,
+          total: debt.total,
+          apr: debt.apr,
+          pmt: debt.pmt,
+          end: debt.end,
+          revolving: debt.revolving,
+        },
+      }),
+      restoreResponse,
+    );
+  }
+});
+
 test('handleApiRequest updates a budget and can restore it', async () => {
   const dashboard = await getDashboardData();
   const category = dashboard.spending[0];
@@ -318,6 +907,226 @@ test('handleApiRequest updates a budget and can restore it', async () => {
     const restoreResponse = createResponse();
     await handleApiRequest(
       createRequest({ method: 'PATCH', url: `/api/spending-categories/${category.id}`, body: { budget: category.budget } }),
+      restoreResponse,
+    );
+  }
+});
+
+test('handleApiRequest inserts a goal and can clean it up', async () => {
+  const name = `Test Goal ${Date.now()}`;
+  let goalId = null;
+
+  try {
+    const response = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'POST',
+        url: '/api/goals',
+        body: {
+          ownerSlug: 'john',
+          name,
+          currentAmount: 25,
+          targetAmount: 100,
+          color: '#1F7A4D',
+          targetLabel: 'by June',
+        },
+      }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+    goalId = data.goal.id;
+
+    assert.equal(response.statusCode, 201);
+    assert.equal(data.goal.name, name);
+    assert.equal(data.goal.current, 25);
+    assert.equal(data.goal.target, 100);
+    assert.equal(data.goal.ownerSlug, 'john');
+  } finally {
+    if (goalId) {
+      await withClient(getAppConnectionString(), async (client) => {
+        await client.query('delete from goals where id = $1', [goalId]);
+      });
+    }
+  }
+});
+
+test('handleApiRequest inserts a bill and can clean it up', async () => {
+  const name = `Test Bill ${Date.now()}`;
+  let billId = null;
+
+  try {
+    const response = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'POST',
+        url: '/api/bills',
+        body: {
+          memberSlug: 'john',
+          monthLabel: 'May',
+          dayOfMonth: 17,
+          name,
+          subtitle: 'Utilities',
+          amount: 88.12,
+          isSoon: true,
+          status: 'upcoming',
+        },
+      }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+    billId = data.bill.id;
+
+    assert.equal(response.statusCode, 201);
+    assert.equal(data.bill.name, name);
+    assert.equal(data.bill.amount, 88.12);
+    assert.equal(data.bill.memberSlug, 'john');
+    assert.equal(data.bill.status, 'upcoming');
+  } finally {
+    if (billId) {
+      await withClient(getAppConnectionString(), async (client) => {
+        await client.query('delete from bills where id = $1', [billId]);
+      });
+    }
+  }
+});
+
+test('handleApiRequest updates a bill and can restore it', async () => {
+  const dashboard = await getDashboardData();
+  const bill = dashboard.bills[0];
+  const nextAmount = Number((bill.amt + 10).toFixed(2));
+
+  try {
+    const response = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/bills/${bill.id}`,
+        body: {
+          memberSlug: bill.who,
+          monthLabel: bill.date.m,
+          dayOfMonth: bill.date.d,
+          name: `${bill.name} Updated`,
+          subtitle: bill.sub,
+          amount: nextAmount,
+          isSoon: bill.soon,
+          status: bill.status,
+        },
+      }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(data.bill.id, bill.id);
+    assert.equal(data.bill.name, `${bill.name} Updated`);
+    assert.equal(data.bill.amount, nextAmount);
+
+    const changedDashboard = await getDashboardData();
+    const changedBill = changedDashboard.bills.find((item) => item.id === bill.id);
+    assert.equal(changedBill.name, `${bill.name} Updated`);
+    assert.equal(changedBill.amt, nextAmount);
+  } finally {
+    const restoreResponse = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/bills/${bill.id}`,
+        body: {
+          memberSlug: bill.who,
+          monthLabel: bill.date.m,
+          dayOfMonth: bill.date.d,
+          name: bill.name,
+          subtitle: bill.sub,
+          amount: bill.amt,
+          isSoon: bill.soon,
+          status: bill.status,
+        },
+      }),
+      restoreResponse,
+    );
+  }
+});
+
+test('handleApiRequest updates bill status and can restore it', async () => {
+  const dashboard = await getDashboardData();
+  const bill = dashboard.bills[0];
+
+  try {
+    const response = createResponse();
+    await handleApiRequest(
+      createRequest({ method: 'PATCH', url: `/api/bills/${bill.id}/status`, body: { status: 'paid' } }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(data.bill.id, bill.id);
+    assert.equal(data.bill.status, 'paid');
+
+    const changedDashboard = await getDashboardData();
+    const changedBill = changedDashboard.bills.find((item) => item.id === bill.id);
+    assert.equal(changedBill.status, 'paid');
+  } finally {
+    const restoreResponse = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/bills/${bill.id}/status`,
+        body: { status: bill.status },
+      }),
+      restoreResponse,
+    );
+  }
+});
+
+test('handleApiRequest updates a goal and can restore it', async () => {
+  const dashboard = await getDashboardData();
+  const goal = dashboard.goals[0];
+  const nextTarget = Number((goal.target + 50).toFixed(2));
+
+  try {
+    const response = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/goals/${goal.id}`,
+        body: {
+          ownerSlug: goal.owner,
+          name: `${goal.name} Updated`,
+          currentAmount: goal.current,
+          targetAmount: nextTarget,
+          color: goal.color,
+          targetLabel: goal.by,
+        },
+      }),
+      response,
+    );
+    const data = JSON.parse(response.body);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(data.goal.id, goal.id);
+    assert.equal(data.goal.name, `${goal.name} Updated`);
+    assert.equal(data.goal.target, nextTarget);
+
+    const changedDashboard = await getDashboardData();
+    const changedGoal = changedDashboard.goals.find((item) => item.id === goal.id);
+    assert.equal(changedGoal.name, `${goal.name} Updated`);
+    assert.equal(changedGoal.target, nextTarget);
+  } finally {
+    const restoreResponse = createResponse();
+    await handleApiRequest(
+      createRequest({
+        method: 'PATCH',
+        url: `/api/goals/${goal.id}`,
+        body: {
+          ownerSlug: goal.owner,
+          name: goal.name,
+          currentAmount: goal.current,
+          targetAmount: goal.target,
+          color: goal.color,
+          targetLabel: goal.by,
+        },
+      }),
       restoreResponse,
     );
   }

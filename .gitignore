@@ -4,3 +4,4 @@ dist/
 codex_db_credentials.md
 .env
 .env.*
+test-results/

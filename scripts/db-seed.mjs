@@ -1,4 +1,6 @@
 import { DATA } from '../src/data.js';
+import { getAllowanceSplit } from '../src/lib/allowance.js';
+import { getAgeFromBirthDate } from '../src/lib/age.js';
 import { getAppConnectionString, withClient } from './db-utils.mjs';
 import { isMockDatabaseEnabled, resetMockDatabase } from './mock-db.mjs';
 
@@ -12,6 +14,7 @@ if (isMockDatabaseEnabled()) {
     try {
       await client.query(`
         truncate
+          allowance_payments,
           chores,
           kid_jars,
           net_worth_history,
@@ -29,8 +32,8 @@ if (isMockDatabaseEnabled()) {
       `);
 
       const household = await client.query(
-        'insert into households (name, as_of, insight) values ($1, $2, $3) returning id',
-        [DATA.family, '2026-05-11', DATA.insight.text],
+        'insert into households (name, as_of, insight, allowance_weekly_amount) values ($1, $2, $3, $4) returning id',
+        [DATA.family, '2026-05-11', DATA.insight.text, DATA.allowance?.weeklyAmount ?? 5],
       );
       const householdId = household.rows[0].id;
 
@@ -38,20 +41,10 @@ if (isMockDatabaseEnabled()) {
 
       for (const member of DATA.members) {
         const result = await client.query(
-          'insert into household_members (household_id, slug, display_name, age, role) values ($1, $2, $3, $4, $5) returning id',
-          [householdId, member.slug, member.name, member.age ?? null, member.role],
+          'insert into household_members (household_id, slug, display_name, birth_date, age, role) values ($1, $2, $3, $4, $5, $6) returning id',
+          [householdId, member.slug, member.name, member.birthDate ?? null, getAgeFromBirthDate(member.birthDate), member.role],
         );
         members.set(member.slug, result.rows[0].id);
-      }
-
-      let accountOrder = 0;
-      for (const group of DATA.accounts) {
-        for (const account of group.items) {
-          await client.query(
-            'insert into accounts (household_id, owner_member_id, account_group, name, subtitle, icon, balance, sort_order) values ($1, $2, $3, $4, $5, $6, $7, $8)',
-            [householdId, members.get(account.owner), group.group, account.name, account.sub, account.icon, account.bal, accountOrder++],
-          );
-        }
       }
 
       for (const category of DATA.spending) {
@@ -124,6 +117,35 @@ if (isMockDatabaseEnabled()) {
           await client.query(
             'insert into chores (member_id, label, reward, is_done) values ($1, $2, $3, $4)',
             [memberId, chore.label, chore.reward, chore.done],
+          );
+        }
+      }
+
+      const split = getAllowanceSplit(DATA.allowance?.weeklyAmount, DATA.allowance?.split);
+      for (const paidAt of DATA.allowancePayments || []) {
+        for (const kid of DATA.kids) {
+          const memberId = members.get(kid.who);
+          await client.query(
+            `
+              insert into allowance_payments (
+                household_id,
+                member_id,
+                paid_at,
+                weekly_amount,
+                spend_amount,
+                save_amount,
+                give_amount
+              ) values ($1, $2, $3, $4, $5, $6, $7)
+            `,
+            [
+              householdId,
+              memberId,
+              paidAt,
+              split.weeklyAmount,
+              split.spend,
+              split.save,
+              split.give,
+            ],
           );
         }
       }

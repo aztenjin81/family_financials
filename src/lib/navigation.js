@@ -1,6 +1,7 @@
 export const NAV_ITEMS = [
   { id: 'overview', label: 'Overview' },
   { id: 'budget', label: 'Budget' },
+  { id: 'transactions', label: 'Transactions' },
   { id: 'accounts', label: 'Accounts' },
   { id: 'goals', label: 'Goals' },
   { id: 'investments', label: 'Investments' },
@@ -17,14 +18,14 @@ export const PAGE_COPY = {
   accounts: {
     eyebrow: 'Accounts',
     title: 'Linked',
-    accent: 'institutions',
+    accent: 'items',
     body: 'Account detail, sync health, and connection management will live here.',
   },
   goals: {
     eyebrow: 'Goals',
     title: 'Savings',
     accent: 'targets',
-    body: 'Goal timelines, funding rules, and owner attribution will live here.',
+    body: 'Savings targets, progress breakdowns, and owner attribution live here.',
   },
   investments: {
     eyebrow: 'Investments',
@@ -36,6 +37,6 @@ export const PAGE_COPY = {
     eyebrow: 'Kids',
     title: 'Allowance',
     accent: 'center',
-    body: 'Chores, jars, recurring allowance, and payout history will live here.',
+    body: 'Chores, jars, weekly allowance payouts, and history live here.',
   },
 };

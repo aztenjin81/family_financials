@@ -14,7 +14,28 @@ import {
   TransactionsCard,
 } from '../sections.jsx';
 
-export function OverviewPage({ onAddAccount, onEditAccount, onEditTransaction, onAdjustBudget }) {
+export function OverviewPage({
+  onAddAccount,
+  onAddBill,
+  onAddDebt,
+  onAddChore,
+  onAddGoal,
+  onEditAccount,
+  onEditBill,
+  onEditDebt,
+  onEditGoal,
+  onEditInvestment,
+  onEditTransaction,
+  onAdjustBudget,
+  onSetBillStatus,
+  onSyncPlaidAccounts,
+  onUpdateChore,
+  onDeleteChore,
+  onOpenTransactions,
+  onPayWeeklyAllowance,
+  allowanceSaving,
+  allowanceError,
+}) {
   const {
     chores,
     hidden,
@@ -32,25 +53,45 @@ export function OverviewPage({ onAddAccount, onEditAccount, onEditTransaction, o
       </div>
 
       <div className="grid main-grid">
-        <AccountsRail hidden={hidden} onAddAccount={onAddAccount} onEditAccount={onEditAccount} />
+        <AccountsRail
+          hidden={hidden}
+          onAddAccount={onAddAccount}
+          onEditAccount={onEditAccount}
+          onSyncPlaidAccounts={onSyncPlaidAccounts}
+        />
         <div className="stack">
           <SpendingCard hidden={hidden} onAdjustBudget={onAdjustBudget} />
           <ForecastCard hidden={hidden} />
         </div>
-        <GoalsCard hidden={hidden} />
+        <GoalsCard hidden={hidden} onAddGoal={onAddGoal} onEditGoal={onEditGoal} />
       </div>
 
       <div className="grid bottom-grid">
-        <TransactionsCard hidden={hidden} onEditTransaction={onEditTransaction} />
-        <BillsCard hidden={hidden} />
+        <TransactionsCard hidden={hidden} onEditTransaction={onEditTransaction} onViewAll={onOpenTransactions} />
+        <BillsCard
+          hidden={hidden}
+          onAddBill={onAddBill}
+          onEditBill={onEditBill}
+          onSetBillStatus={onSetBillStatus}
+        />
         <div className="stack">
-          <InvestmentsCard hidden={hidden} />
-          <DebtCard hidden={hidden} />
+          <InvestmentsCard hidden={hidden} onEditInvestment={onEditInvestment} />
+          <DebtCard hidden={hidden} onAddDebt={onAddDebt} onEditDebt={onEditDebt} />
         </div>
       </div>
 
       <div className="grid kids-grid">
-        <KidsCard hidden={hidden} chores={chores} toggleChore={toggleChore} />
+        <KidsCard
+          hidden={hidden}
+          chores={chores}
+          toggleChore={toggleChore}
+          onAddChore={onAddChore}
+          onUpdateChore={onUpdateChore}
+          onDeleteChore={onDeleteChore}
+          onPayWeeklyAllowance={onPayWeeklyAllowance}
+          allowanceSaving={allowanceSaving}
+          allowanceError={allowanceError}
+        />
       </div>
     </>
   );

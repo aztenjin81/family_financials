@@ -1,18 +1,91 @@
 /* eslint-disable */
 /* Fake data for the Czechowski Family — plausible household finance */
 
+import { getAgeFromBirthDate } from './lib/age.js';
+import { getInvestmentPerformance } from './lib/investments.js';
+
+const memberSeeds = [
+  { slug: 'john', name: 'John', birthDate: '1981-10-12', role: 'parent' },
+  { slug: 'stephanie', name: 'Stephanie', birthDate: '1983-03-08', role: 'parent' },
+  { slug: 'kristen', name: 'Kristen', birthDate: '2007-09-14', role: 'child' },
+  { slug: 'jason', name: 'Jason', birthDate: '2015-07-23', role: 'child' },
+  { slug: 'lauren', name: 'Lauren', birthDate: '2016-08-19', role: 'child' },
+  { slug: 'ian', name: 'Ian', birthDate: '2020-11-30', role: 'child' },
+];
+
+const memberBirthDates = new Map(memberSeeds.map((member) => [member.slug, member.birthDate]));
+
+const kidSeeds = [
+  {
+    who: 'kristen',
+    name: 'Kristen',
+    balance: 64.50,
+    jars: { spend: 24.50, save: 30.00, give: 10.00 },
+    chores: [
+      { label: 'Run dishwasher before bed', reward: 1.00, done: true },
+      { label: 'Review scholarship checklist', reward: 3.00, done: false },
+      { label: 'Help Jason with reading log', reward: 2.00, done: false },
+    ],
+  },
+  {
+    who: 'jason',
+    name: 'Jason',
+    balance: 18.25,
+    jars: { spend: 8.25, save: 8.00, give: 2.00 },
+    chores: [
+      { label: 'Feed pet before school', reward: 0.50, done: true },
+      { label: 'Brush teeth (no reminders!)', reward: 1.00, done: false },
+      { label: 'Put away laundry', reward: 1.50, done: false },
+    ],
+  },
+  {
+    who: 'lauren',
+    name: 'Lauren',
+    balance: 21.00,
+    jars: { spend: 9.00, save: 9.00, give: 3.00 },
+    chores: [
+      { label: 'Pack backpack after homework', reward: 1.00, done: true },
+      { label: 'Clear dinner dishes', reward: 1.00, done: false },
+      { label: 'Make bed before school', reward: 0.50, done: false },
+    ],
+  },
+  {
+    who: 'ian',
+    name: 'Ian',
+    balance: 7.50,
+    jars: { spend: 4.00, save: 2.50, give: 1.00 },
+    chores: [
+      { label: 'Put shoes in the basket', reward: 0.25, done: true },
+      { label: 'Put toys away after playtime', reward: 0.50, done: false },
+    ],
+  },
+];
+
+function addAge(record, birthDate) {
+  return {
+    ...record,
+    birthDate,
+    age: getAgeFromBirthDate(birthDate),
+  };
+}
+
 export const DATA = {
   family: 'The Czechowski Family',
   asOfDate: '2026-05-11',
   asOf: 'Monday, May 11, 2026',
-  members: [
-    { slug: 'john', name: 'John', role: 'parent' },
-    { slug: 'stephanie', name: 'Stephanie', role: 'parent' },
-    { slug: 'kristen', name: 'Kristen', age: 18, role: 'child' },
-    { slug: 'jason', name: 'Jason', age: 10, role: 'child' },
-    { slug: 'lauren', name: 'Lauren', age: 9, role: 'child' },
-    { slug: 'ian', name: 'Ian', age: 5, role: 'child' },
+  allowance: {
+    weeklyAmount: 5,
+    split: {
+      spend: 0.5,
+      save: 0.3,
+      give: 0.2,
+    },
+  },
+  allowancePayments: [
+    '2026-05-04T09:00:00.000Z',
+    '2026-04-27T09:00:00.000Z',
   ],
+  members: memberSeeds.map((member) => addAge(member, member.birthDate)),
 
   netWorth: {
     total: 487420.18,
@@ -29,30 +102,7 @@ export const DATA = {
 
   cashflow30: { incoming: 14820, outgoing: 11260, net: 3560 },
 
-  accounts: [
-    { group: 'Cash', items: [
-      { name: 'Chase Joint Checking', sub: '••4421', icon: 'Bank', bal: 8420.55, owner: 'john' },
-      { name: 'Ally Savings', sub: 'High-yield 4.10% APY', icon: 'Vault', bal: 24180.00, owner: 'stephanie' },
-      { name: 'Cash Reserve', sub: 'Emergency', icon: 'Vault', bal: 18200.00, owner: 'john' },
-    ]},
-    { group: 'Credit', items: [
-      { name: 'Apple Card', sub: 'Statement May 18', icon: 'Card', bal: -842.19, owner: 'stephanie' },
-      { name: 'Chase Sapphire', sub: 'Statement May 22', icon: 'Card', bal: -2188.40, owner: 'john' },
-    ]},
-    { group: 'Investments', items: [
-      { name: 'Vanguard Brokerage', sub: 'Joint taxable', icon: 'Stock', bal: 84120.00, owner: 'john' },
-      { name: 'Fidelity 401(k) — John', sub: 'Pre-tax', icon: 'Stock', bal: 162400.00, owner: 'john' },
-      { name: 'Fidelity 401(k) — Stephanie', sub: 'Pre-tax', icon: 'Stock', bal: 98220.00, owner: 'stephanie' },
-      { name: '529 — Kristen', sub: 'NY Direct', icon: 'Stock', bal: 18420.00, owner: 'kristen' },
-      { name: '529 — Jason', sub: 'NY Direct', icon: 'Stock', bal: 11860.00, owner: 'jason' },
-    ]},
-    { group: 'Property & Debt', items: [
-      { name: 'Home — 14 Maple St.', sub: 'Zillow est.', icon: 'Home', bal: 612000.00, owner: 'john' },
-      { name: 'Mortgage', sub: 'Wells Fargo · 5.85%', icon: 'Home', bal: -428400.00, owner: 'john' },
-      { name: '2022 Honda Odyssey', sub: 'KBB est.', icon: 'Car', bal: 28200.00, owner: 'stephanie' },
-      { name: 'Auto Loan', sub: 'Honda Financial', icon: 'Car', bal: -12420.00, owner: 'stephanie' },
-    ]},
-  ],
+  accounts: [],
 
   spending: [
     { cat: 'Groceries',       color: '#1F7A4D', spent: 1284, budget: 1400 },
@@ -110,75 +160,38 @@ export const DATA = {
   ],
 
   bills: [
-    { date: { m: 'May', d: 14 }, name: 'Netflix',         sub: 'Subscriptions', amt: 22.99, soon: true,  who: 'stephanie' },
-    { date: { m: 'May', d: 18 }, name: 'Apple Card',      sub: 'Min. due $35',  amt: 842.19, soon: true,  who: 'stephanie' },
-    { date: { m: 'May', d: 22 }, name: 'Internet — Verizon', sub: 'Autopay', amt: 79.99,  soon: false, who: 'john' },
-    { date: { m: 'Jun', d: 1  }, name: 'Mortgage',        sub: 'Wells Fargo',    amt: 2480.00, soon: false, who: 'john' },
-    { date: { m: 'Jun', d: 4  }, name: 'Auto Loan',       sub: 'Honda Financial', amt: 412.00, soon: false, who: 'stephanie' },
+    { date: { m: 'May', d: 14 }, name: 'Netflix',         sub: 'Subscriptions', amt: 22.99, soon: true,  status: 'upcoming', who: 'stephanie' },
+    { date: { m: 'May', d: 18 }, name: 'Apple Card',      sub: 'Min. due $35',  amt: 842.19, soon: true,  status: 'upcoming', who: 'stephanie' },
+    { date: { m: 'May', d: 22 }, name: 'Internet — Verizon', sub: 'Autopay', amt: 79.99,  soon: false, status: 'upcoming', who: 'john' },
+    { date: { m: 'Jun', d: 1  }, name: 'Mortgage',        sub: 'Wells Fargo',    amt: 2480.00, soon: false, status: 'upcoming', who: 'john' },
+    { date: { m: 'Jun', d: 4  }, name: 'Auto Loan',       sub: 'Honda Financial', amt: 412.00, soon: false, status: 'upcoming', who: 'stephanie' },
   ],
 
   investments: {
-    total: 374000,
-    delta: 1842.30,
-    deltaPct: 0.49,
     holdings: [
-      { tk: 'VTI',   name: 'Vanguard Total Market', val: 84200,  d: 0.62 },
-      { tk: 'VXUS',  name: 'Vanguard Intl.',         val: 32100,  d: -0.18 },
-      { tk: 'BND',   name: 'Vanguard Bonds',         val: 28400,  d: 0.04 },
-      { tk: 'AAPL',  name: 'Apple Inc.',             val: 12400,  d: 1.42 },
-      { tk: 'TSLA',  name: 'Tesla',                   val: 4220,   d: -2.10 },
+      { id: 1, tk: 'VTI',   name: 'Vanguard Total Market', val: 84200,  d: 0.62 },
+      { id: 2, tk: 'VXUS',  name: 'Vanguard Intl.',         val: 32100,  d: -0.18 },
+      { id: 3, tk: 'BND',   name: 'Vanguard Bonds',         val: 28400,  d: 0.04 },
+      { id: 4, tk: 'AAPL',  name: 'Apple Inc.',             val: 12400,  d: 1.42 },
+      { id: 5, tk: 'TSLA',  name: 'Tesla',                   val: 4220,   d: -2.10 },
     ],
   },
 
   debts: [
-    { name: 'Mortgage',     paid: 71600,  total: 500000, apr: 5.85, pmt: 2480, end: 'Aug 2052' },
-    { name: 'Auto Loan',    paid: 9580,   total: 22000,  apr: 6.20, pmt: 412,  end: 'Nov 2027' },
-    { name: 'Apple Card',   paid: 0,      total: 842,    apr: 22.99, pmt: 35,  end: '—', revolving: true },
+    { id: 1, name: 'Mortgage',     paid: 71600,  total: 500000, apr: 5.85, pmt: 2480, end: 'Aug 2052' },
+    { id: 2, name: 'Auto Loan',    paid: 9580,   total: 22000,  apr: 6.20, pmt: 412,  end: 'Nov 2027' },
+    { id: 3, name: 'Apple Card',   paid: 0,      total: 842,    apr: 22.99, pmt: 35,  end: '—', revolving: true },
   ],
 
-  kids: [
-    {
-      who: 'kristen', name: 'Kristen', age: 18,
-      balance: 64.50,
-      jars: { spend: 24.50, save: 30.00, give: 10.00 },
-      chores: [
-        { label: 'Run dishwasher before bed', reward: 1.00, done: true },
-        { label: 'Review scholarship checklist', reward: 3.00, done: false },
-        { label: 'Help Jason with reading log', reward: 2.00, done: false },
-      ],
-    },
-    {
-      who: 'jason', name: 'Jason', age: 10,
-      balance: 18.25,
-      jars: { spend: 8.25, save: 8.00, give: 2.00 },
-      chores: [
-        { label: 'Feed pet before school', reward: 0.50, done: true },
-        { label: 'Brush teeth (no reminders!)', reward: 1.00, done: false },
-        { label: 'Put away laundry', reward: 1.50, done: false },
-      ],
-    },
-    {
-      who: 'lauren', name: 'Lauren', age: 9,
-      balance: 21.00,
-      jars: { spend: 9.00, save: 9.00, give: 3.00 },
-      chores: [
-        { label: 'Pack backpack after homework', reward: 1.00, done: true },
-        { label: 'Clear dinner dishes', reward: 1.00, done: false },
-        { label: 'Make bed before school', reward: 0.50, done: false },
-      ],
-    },
-    {
-      who: 'ian', name: 'Ian', age: 5,
-      balance: 7.50,
-      jars: { spend: 4.00, save: 2.50, give: 1.00 },
-      chores: [
-        { label: 'Put shoes in the basket', reward: 0.25, done: true },
-        { label: 'Put toys away after playtime', reward: 0.50, done: false },
-      ],
-    },
-  ],
+  kids: kidSeeds.map((kid) => addAge(kid, memberBirthDates.get(kid.who))),
 
   insight: {
     text: "You're on track this month — but dining out is at 136% of budget with 20 days to go. Stephanie suggested moving Friday's planned takeout to a freezer-pizza night to save about $48.",
   },
+};
+
+const investmentPerformance = getInvestmentPerformance(DATA.investments.holdings);
+DATA.investments = {
+  ...DATA.investments,
+  ...investmentPerformance,
 };

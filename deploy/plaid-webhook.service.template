@@ -1,5 +1,5 @@
 [Unit]
-Description=Family Financials live site
+Description=Family Financials Plaid webhook listener
 After=network-online.target
 Wants=network-online.target
 
@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=__WORKDIR__
 EnvironmentFile=__WORKDIR__/.env.plaid-webhook
-ExecStart=/usr/bin/env npm run live
+ExecStart=/usr/bin/env npm run plaid:webhook
 Restart=always
 RestartSec=5
 Environment=NODE_ENV=production

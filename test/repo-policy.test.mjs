@@ -37,9 +37,14 @@ test('package exposes an always-on live command', () => {
   const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   const live = fs.readFileSync('scripts/live.mjs', 'utf8');
   const install = fs.readFileSync('scripts/install-live-service.mjs', 'utf8');
+  const webhookInstall = fs.readFileSync('scripts/install-plaid-webhook-service.mjs', 'utf8');
+  const webhookServer = fs.readFileSync('scripts/plaid-webhook-server.mjs', 'utf8');
+  const webhookTemplate = fs.readFileSync('deploy/plaid-webhook.service.template', 'utf8');
 
   assert.equal(pkg.scripts.live, 'node scripts/live.mjs');
   assert.equal(pkg.scripts['live:install'], 'node scripts/install-live-service.mjs');
+  assert.equal(pkg.scripts['plaid:webhook'], 'node scripts/plaid-webhook-server.mjs');
+  assert.equal(pkg.scripts['plaid:webhook:install'], 'node scripts/install-plaid-webhook-service.mjs');
   assert.equal(pkg.scripts.e2e, 'playwright test');
   assert.match(live, /function runBuild/);
   assert.match(live, /\['run', 'build'\]/);
@@ -48,6 +53,14 @@ test('package exposes an always-on live command', () => {
   assert.match(install, /systemctl/);
   assert.match(install, /loginctl/);
   assert.match(install, /enable', '--now'/);
+  assert.match(fs.readFileSync('deploy/family-financials.service.template', 'utf8'), /EnvironmentFile=__WORKDIR__\/\.env\.plaid-webhook/);
+  assert.match(webhookInstall, /systemctl/);
+  assert.match(webhookInstall, /loginctl/);
+  assert.match(webhookInstall, /family-financials-plaid-webhook\.service/);
+  assert.match(webhookServer, /4010/);
+  assert.match(webhookServer, /plaid-webhook/);
+  assert.match(webhookTemplate, /EnvironmentFile=__WORKDIR__\/\.env\.plaid-webhook/);
+  assert.match(webhookTemplate, /ExecStart=\/usr\/bin\/env npm run plaid:webhook/);
 });
 
 test('playwright harness launches the app and browser tests', () => {
